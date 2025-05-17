@@ -1,0 +1,4 @@
+Invoking command in '/home/robotics/ros2_ws/build/minimal_robot_gazebo': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/robotics/ros2_ws/build/minimal_robot_gazebo -- -j8 -l8
+Invoked command in '/home/robotics/ros2_ws/build/minimal_robot_gazebo' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/robotics/ros2_ws/build/minimal_robot_gazebo -- -j8 -l8
+Invoking command in '/home/robotics/ros2_ws/build/minimal_robot_gazebo': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/robotics/ros2_ws/build/minimal_robot_gazebo
+Invoked command in '/home/robotics/ros2_ws/build/minimal_robot_gazebo' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/robotics/ros2_ws/build/minimal_robot_gazebo
