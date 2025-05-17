@@ -69,7 +69,7 @@ def generate_launch_description():
         package='ros_gz_bridge', executable='parameter_bridge',
         arguments=[
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-            '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
+            '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model', 
             '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
         ],
         output='screen'

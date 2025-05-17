@@ -24,7 +24,7 @@ def generate_launch_description():
     )
 
     # Tell Ignition/Gazebo where to find resources
-    gazebo_res    = SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', pkg_share)
+    gazebo_res = SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', pkg_share)
     gazebo_models = SetEnvironmentVariable('GAZEBO_MODEL_PATH', str(Path(pkg_share) / 'models'))
 
     # Expand XACRO -> URDF string
@@ -70,8 +70,32 @@ def generate_launch_description():
         arguments=[
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
-            '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
+            '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+            '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist'
         ],
+        output='screen'
+    )
+
+    # ROS 2 Control
+    control_node = Node(
+        package='controller_manager',
+        executable='ros2_control_node',
+        parameters=[{'robot_description': robot_description}],
+        output='screen'
+    )
+
+    # Spawn controllers
+    spawn_controllers = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['diff_drive_controller'],
+        output='screen'
+    )
+
+    spawn_joint_state = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['joint_state_broadcaster'],
         output='screen'
     )
 
@@ -84,4 +108,7 @@ def generate_launch_description():
         log_model,
         spawn,
         bridge,
+        control_node,
+        spawn_joint_state,
+        spawn_controllers,
     ])
