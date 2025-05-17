@@ -15,8 +15,13 @@ Then if the noVnc container is running properly, run the ros humble docker conta
     ./start.sh
 ```
 
+First of all build the environment inside the ros2 container:
 
-Then, after the ros2 container is running, run in a separate terminal the launch file which spwans the robot inside gazebo environment.
+```
+    colcon build
+```
+
+Then run in a separate terminal the launch file which spwans the robot inside gazebo environment.
 
 ```
     ros2 launch minimal_robot_gazebo spawn_robot.launch.py
