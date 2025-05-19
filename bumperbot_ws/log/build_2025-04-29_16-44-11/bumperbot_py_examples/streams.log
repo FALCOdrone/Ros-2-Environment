@@ -1,0 +1,25 @@
+[1.195s] Invoking command in '/github/ros2odometry/bumperbot_ws/src/bumperbot_py_examples': PYTHONPATH=/github/ros2odometry/bumperbot_ws/build/bumperbot_py_examples/prefix_override:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base ../../build/bumperbot_py_examples build --build-base /github/ros2odometry/bumperbot_ws/build/bumperbot_py_examples/build install --record /github/ros2odometry/bumperbot_ws/build/bumperbot_py_examples/install.log --single-version-externally-managed
+[1.582s] running egg_info
+[1.586s] writing ../../build/bumperbot_py_examples/bumperbot_py_examples.egg-info/PKG-INFO
+[1.586s] writing dependency_links to ../../build/bumperbot_py_examples/bumperbot_py_examples.egg-info/dependency_links.txt
+[1.587s] writing entry points to ../../build/bumperbot_py_examples/bumperbot_py_examples.egg-info/entry_points.txt
+[1.588s] writing requirements to ../../build/bumperbot_py_examples/bumperbot_py_examples.egg-info/requires.txt
+[1.588s] writing top-level names to ../../build/bumperbot_py_examples/bumperbot_py_examples.egg-info/top_level.txt
+[1.592s] reading manifest file '../../build/bumperbot_py_examples/bumperbot_py_examples.egg-info/SOURCES.txt'
+[1.594s] writing manifest file '../../build/bumperbot_py_examples/bumperbot_py_examples.egg-info/SOURCES.txt'
+[1.596s] running build
+[1.600s] running build_py
+[1.601s] running install
+[1.601s] /usr/lib/python3/dist-packages/setuptools/command/install.py:34: SetuptoolsDeprecationWarning: setup.py install is deprecated. Use build and pip and other standards-based tools.
+[1.602s]   warnings.warn(
+[1.602s] running install_lib
+[1.602s] running install_data
+[1.602s] running install_egg_info
+[1.603s] removing '/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples/lib/python3.10/site-packages/bumperbot_py_examples-0.0.0-py3.10.egg-info' (and everything under it)
+[1.609s] Copying ../../build/bumperbot_py_examples/bumperbot_py_examples.egg-info to /github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples/lib/python3.10/site-packages/bumperbot_py_examples-0.0.0-py3.10.egg-info
+[1.631s] running install_scripts
+[1.666s] Installing simple_parameter script to /github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples/lib/bumperbot_py_examples
+[1.669s] Installing simple_publisher script to /github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples/lib/bumperbot_py_examples
+[1.670s] Installing simple_subscriber script to /github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples/lib/bumperbot_py_examples
+[1.671s] writing list of installed files to '/github/ros2odometry/bumperbot_ws/build/bumperbot_py_examples/install.log'
+[1.696s] Invoked command in '/github/ros2odometry/bumperbot_ws/src/bumperbot_py_examples' returned '0': PYTHONPATH=/github/ros2odometry/bumperbot_ws/build/bumperbot_py_examples/prefix_override:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base ../../build/bumperbot_py_examples build --build-base /github/ros2odometry/bumperbot_ws/build/bumperbot_py_examples/build install --record /github/ros2odometry/bumperbot_ws/build/bumperbot_py_examples/install.log --single-version-externally-managed

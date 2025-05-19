@@ -1,0 +1,9 @@
+/github/ros2odometry/bumperbot_ws/build/urdf_tutorial/CMakeFiles/uninstall.dir
+/github/ros2odometry/bumperbot_ws/build/urdf_tutorial/CMakeFiles/urdf_tutorial_uninstall.dir
+/github/ros2odometry/bumperbot_ws/build/urdf_tutorial/CMakeFiles/test.dir
+/github/ros2odometry/bumperbot_ws/build/urdf_tutorial/CMakeFiles/edit_cache.dir
+/github/ros2odometry/bumperbot_ws/build/urdf_tutorial/CMakeFiles/rebuild_cache.dir
+/github/ros2odometry/bumperbot_ws/build/urdf_tutorial/CMakeFiles/list_install_components.dir
+/github/ros2odometry/bumperbot_ws/build/urdf_tutorial/CMakeFiles/install.dir
+/github/ros2odometry/bumperbot_ws/build/urdf_tutorial/CMakeFiles/install/local.dir
+/github/ros2odometry/bumperbot_ws/build/urdf_tutorial/CMakeFiles/install/strip.dir

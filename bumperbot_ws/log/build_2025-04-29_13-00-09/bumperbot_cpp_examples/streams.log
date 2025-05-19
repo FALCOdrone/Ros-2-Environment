@@ -1,0 +1,20 @@
+[0.216s] Invoking command in '/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake --build /github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples -- -j16 -l16
+[0.638s] Invoked command in '/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake --build /github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples -- -j16 -l16
+[1.009s] Invoking command in '/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake --install /github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples
+[1.065s] -- Install configuration: ""
+[1.066s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/ament_index/resource_index/package_run_dependencies/bumperbot_cpp_examples
+[1.067s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/ament_index/resource_index/parent_prefix_path/bumperbot_cpp_examples
+[1.067s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/bumperbot_cpp_examples/environment/ament_prefix_path.sh
+[1.068s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/bumperbot_cpp_examples/environment/ament_prefix_path.dsv
+[1.068s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/bumperbot_cpp_examples/environment/path.sh
+[1.068s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/bumperbot_cpp_examples/environment/path.dsv
+[1.069s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/bumperbot_cpp_examples/local_setup.bash
+[1.069s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/bumperbot_cpp_examples/local_setup.sh
+[1.070s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/bumperbot_cpp_examples/local_setup.zsh
+[1.071s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/bumperbot_cpp_examples/local_setup.dsv
+[1.072s] -- Installing: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/bumperbot_cpp_examples/package.dsv
+[1.079s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/ament_index/resource_index/packages/bumperbot_cpp_examples
+[1.080s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/bumperbot_cpp_examples/cmake/bumperbot_cpp_examplesConfig.cmake
+[1.081s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/bumperbot_cpp_examples/cmake/bumperbot_cpp_examplesConfig-version.cmake
+[1.087s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_cpp_examples/share/bumperbot_cpp_examples/package.xml
+[1.095s] Invoked command in '/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake --install /github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples

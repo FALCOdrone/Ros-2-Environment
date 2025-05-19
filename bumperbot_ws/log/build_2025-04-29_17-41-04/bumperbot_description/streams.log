@@ -1,0 +1,48 @@
+[0.184s] Invoking command in '/github/ros2odometry/bumperbot_ws/build/bumperbot_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake --build /github/ros2odometry/bumperbot_ws/build/bumperbot_description -- -j16 -l16
+[0.450s] -- Found ament_cmake: 1.3.6 (/opt/ros/humble/share/ament_cmake/cmake)
+[1.086s] -- Found ament_lint_auto: 0.12.9 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[1.348s] -- Added test 'flake8' to check Python code syntax and style conventions
+[1.359s] -- Added test 'lint_cmake' to check CMake code style
+[1.363s] -- Added test 'pep257' to check Python code against some of the docstring style conventions in PEP 257
+[1.392s] -- Added test 'xmllint' to check XML markup files
+[1.402s] -- Configuring done
+[1.463s] -- Generating done
+[1.472s] -- Build files have been written to: /github/ros2odometry/bumperbot_ws/build/bumperbot_description
+[1.689s] Invoked command in '/github/ros2odometry/bumperbot_ws/build/bumperbot_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake --build /github/ros2odometry/bumperbot_ws/build/bumperbot_description -- -j16 -l16
+[2.066s] Invoking command in '/github/ros2odometry/bumperbot_ws/build/bumperbot_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake --install /github/ros2odometry/bumperbot_ws/build/bumperbot_description
+[2.139s] -- Install configuration: ""
+[2.140s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/meshes
+[2.143s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/meshes/imu_link.STL
+[2.144s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/meshes/caster_rear_link.STL
+[2.144s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/meshes/wheel_left_link.STL
+[2.145s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/meshes/base_link.STL
+[2.145s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/meshes/wheel_right_link.STL
+[2.146s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/meshes/caster_front_link.STL
+[2.146s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/urdf
+[2.147s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/urdf/bumperbot_gazebo.xacro
+[2.148s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/urdf/bumperbot.urdf.xacro
+[2.148s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/launch
+[2.149s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/launch/display.launch.py
+[2.150s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/launch/gazebo.launch.py
+[2.151s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/launch/gazebo_classic.launch.py
+[2.151s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/launch/old_gazebo_classic.launch.py
+[2.152s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/rviz
+[2.153s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/rviz/display.rviz
+[2.154s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/worlds
+[2.155s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/worlds/optimized.world
+[2.156s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/ament_index/resource_index/package_run_dependencies/bumperbot_description
+[2.157s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/ament_index/resource_index/parent_prefix_path/bumperbot_description
+[2.157s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/environment/ament_prefix_path.sh
+[2.158s] -- Installing: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/environment/ament_prefix_path.dsv
+[2.161s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/environment/path.sh
+[2.162s] -- Installing: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/environment/path.dsv
+[2.164s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/local_setup.bash
+[2.165s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/local_setup.sh
+[2.165s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/local_setup.zsh
+[2.166s] -- Installing: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/local_setup.dsv
+[2.170s] -- Installing: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/package.dsv
+[2.173s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/ament_index/resource_index/packages/bumperbot_description
+[2.174s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/cmake/bumperbot_descriptionConfig.cmake
+[2.175s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/cmake/bumperbot_descriptionConfig-version.cmake
+[2.175s] -- Up-to-date: /github/ros2odometry/bumperbot_ws/install/bumperbot_description/share/bumperbot_description/package.xml
+[2.182s] Invoked command in '/github/ros2odometry/bumperbot_ws/build/bumperbot_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake --install /github/ros2odometry/bumperbot_ws/build/bumperbot_description

@@ -1,0 +1,4 @@
+Invoking command in '/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples -- -j16 -l16
+Invoked command in '/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples -- -j16 -l16
+Invoking command in '/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples
+Invoked command in '/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples

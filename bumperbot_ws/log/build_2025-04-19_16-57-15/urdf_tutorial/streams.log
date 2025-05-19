@@ -1,0 +1,65 @@
+[0.432s] Invoking command in '/github/ros2odometry/bumperbot_ws/build/urdf_tutorial': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake /github/ros2odometry/bumperbot_ws/src/urdf_tutorial -DCMAKE_INSTALL_PREFIX=/github/ros2odometry/bumperbot_ws/install/urdf_tutorial
+[0.857s] -- The C compiler identification is GNU 11.4.0
+[1.183s] -- The CXX compiler identification is GNU 11.4.0
+[1.212s] -- Detecting C compiler ABI info
+[1.731s] -- Detecting C compiler ABI info - done
+[1.747s] -- Check for working C compiler: /usr/bin/cc - skipped
+[1.747s] -- Detecting C compile features
+[1.748s] -- Detecting C compile features - done
+[1.751s] -- Detecting CXX compiler ABI info
+[2.187s] -- Detecting CXX compiler ABI info - done
+[2.202s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[2.203s] -- Detecting CXX compile features
+[2.203s] -- Detecting CXX compile features - done
+[2.216s] -- Found ament_cmake: 1.3.6 (/opt/ros/humble/share/ament_cmake/cmake)
+[2.882s] -- Found Python3: /usr/bin/python3.10 (found version "3.10.12") found components: Interpreter 
+[3.124s] -- Found ament_lint_auto: 0.12.9 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[3.280s] -- Configuring done
+[3.304s] -- Generating done
+[3.314s] -- Build files have been written to: /github/ros2odometry/bumperbot_ws/build/urdf_tutorial
+[3.317s] Invoked command in '/github/ros2odometry/bumperbot_ws/build/urdf_tutorial' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake /github/ros2odometry/bumperbot_ws/src/urdf_tutorial -DCMAKE_INSTALL_PREFIX=/github/ros2odometry/bumperbot_ws/install/urdf_tutorial
+[3.321s] Invoking command in '/github/ros2odometry/bumperbot_ws/build/urdf_tutorial': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake --build /github/ros2odometry/bumperbot_ws/build/urdf_tutorial -- -j16 -l16
+[3.519s] Invoked command in '/github/ros2odometry/bumperbot_ws/build/urdf_tutorial' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake --build /github/ros2odometry/bumperbot_ws/build/urdf_tutorial -- -j16 -l16
+[3.749s] Invoking command in '/github/ros2odometry/bumperbot_ws/build/urdf_tutorial': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake --install /github/ros2odometry/bumperbot_ws/build/urdf_tutorial
+[3.790s] -- Install configuration: ""
+[3.790s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/images
+[3.792s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/images/origins.png
+[3.798s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/images/myfirst.png
+[3.801s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/images/visual.png
+[3.804s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/images/multipleshapes.png
+[3.807s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/images/flexible.png
+[3.811s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/images/materials.png
+[3.814s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/launch
+[3.815s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/launch/display.launch.py
+[3.816s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/meshes
+[3.817s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/meshes/l_finger_tip_color.png
+[3.819s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/meshes/l_finger_tip.dae
+[3.822s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/meshes/l_finger_color.png
+[3.824s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/meshes/l_finger.dae
+[3.827s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/rviz
+[3.828s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/rviz/urdf.rviz
+[3.830s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/urdf
+[3.831s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/urdf/07-physics.urdf
+[3.833s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/urdf/08-macroed.urdf.xacro
+[3.835s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/urdf/05-visual.urdf
+[3.837s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/urdf/01-myfirst.urdf
+[3.839s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/urdf/02-multipleshapes.urdf
+[3.841s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/urdf/06-flexible.urdf
+[3.843s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/urdf/04-materials.urdf
+[3.844s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/urdf/03-origins.urdf
+[3.847s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/ament_index/resource_index/package_run_dependencies/urdf_tutorial
+[3.850s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/ament_index/resource_index/parent_prefix_path/urdf_tutorial
+[3.852s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/environment/ament_prefix_path.sh
+[3.853s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/environment/ament_prefix_path.dsv
+[3.855s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/environment/path.sh
+[3.857s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/environment/path.dsv
+[3.859s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/local_setup.bash
+[3.860s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/local_setup.sh
+[3.862s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/local_setup.zsh
+[3.864s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/local_setup.dsv
+[3.865s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/package.dsv
+[3.868s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/ament_index/resource_index/packages/urdf_tutorial
+[3.870s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/cmake/urdf_tutorialConfig.cmake
+[3.871s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/cmake/urdf_tutorialConfig-version.cmake
+[3.873s] -- Installing: /github/ros2odometry/bumperbot_ws/install/urdf_tutorial/share/urdf_tutorial/package.xml
+[3.880s] Invoked command in '/github/ros2odometry/bumperbot_ws/build/urdf_tutorial' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/github/ros2odometry/bumperbot_ws/install/bumperbot_py_examples:/opt/ros/humble /usr/bin/cmake --install /github/ros2odometry/bumperbot_ws/build/urdf_tutorial
