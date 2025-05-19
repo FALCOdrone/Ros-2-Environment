@@ -1,9 +1,0 @@
-/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples/CMakeFiles/uninstall.dir
-/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples/CMakeFiles/bumperbot_cpp_examples_uninstall.dir
-/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples/CMakeFiles/test.dir
-/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples/CMakeFiles/edit_cache.dir
-/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples/CMakeFiles/rebuild_cache.dir
-/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples/CMakeFiles/list_install_components.dir
-/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples/CMakeFiles/install.dir
-/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples/CMakeFiles/install/local.dir
-/github/ros2odometry/bumperbot_ws/build/bumperbot_cpp_examples/CMakeFiles/install/strip.dir
