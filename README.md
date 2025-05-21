@@ -8,12 +8,12 @@
 MacOS:
 
 ```
-docker run -p 6080:80 --security-opt seccomp=unconfined --shm-size=512m -v /users/<username>/<path_to_github>:/github --name falcodrone vossgit/falcodrone:latest
+docker run -p 6080:80 --security-opt seccomp=unconfined --shm-size=512m -v /users/<username>/<path_to_github>:/github --name falcodrone_2 vossgit/falcodrone:latest
 ```
 Windows:
 Do not use WSL use the classical windows cmd
 ```
-docker run -p 6080:80 --security-opt seccomp=unconfined --shm-size=512m -v "C:\<absolute_path_to_github>:/github" --name falcodrone vossgit/falcodrone:latest
+docker run -p 6080:80 --security-opt seccomp=unconfined --shm-size=512m -v "C:\<absolute_path_to_github>:/github" --name falcodrone_2 vossgit/falcodrone:latest
 ```
 At this point you should get as output a bunch of `RUNNING state` lines and you can proceed.
 
