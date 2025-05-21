@@ -35,10 +35,10 @@ To restart the container when closed(you should always have the docker app runni
 (you should always have the docker app running in the background) in the computer terminal/shell write:
 
 ```
-docker start roverchallenge
+docker start falcodrone_2
 ```
 ```
-docker exec -it roverchallenge /bin/sh
+docker exec -it falcodrone_2 /bin/sh
 ```
 ### Note
 The `-v /users/<username>/<path_to_github>:/github` part of the Docker run command establishes a volume mount. This allows you to share data between your host machine and the Docker container. Here's a breakdown of this volume mount:
