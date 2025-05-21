@@ -27,7 +27,7 @@ At this point you should get as output a bunch of `RUNNING state` lines and you 
 ### Accessing the GUI
 After running the container, you can access the graphical user interface (GUI) by opening a web browser and navigating to `http://localhost:6080`. The container exposes the GUI on port 6080, allowing you to interact with the simulation environment.
 
-To restart the container when closed(you should always have the docker app running in the background) in the computer terminal/shell write:docker start roverchallenge
+To restart the container when closed(you should always have the docker app running in the background) in the computer terminal/shell write:docker start falcodrone_2
 
 
 
@@ -57,7 +57,7 @@ the following commands are going to be executed from a terminal inside your host
 After having entered the container with:
 
 ```
-docker exec -it roverchallenge /bin/sh
+docker exec -it falcodrone_2 /bin/sh
 ```
 We have to set the command line to use bash by writing
 
