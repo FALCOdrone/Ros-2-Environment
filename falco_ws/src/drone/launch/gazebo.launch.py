@@ -26,11 +26,11 @@ def generate_launch_description():
     is_ignition = "True" if ros_distro == "humble" else "False"
 
     # Declare the URDF/model argument
-    model_arg = DeclareLaunchArgument(
+    """model_arg = DeclareLaunchArgument(
         name="model",
-        default_value=os.path.join(pkg_share, "urdf", "FALCO.urdf_renamed.xacro"),
+        default_value=os.path.join(pkg_share, "urdf", "FALCO.urdf.xacro"),
         description="Absolute path to robot urdf file",
-    )
+    )"""
 
     # Set Ignition resource paths (chaining existing with new)
     ign_gazebo_resource_path = SetEnvironmentVariable(
