@@ -16,14 +16,14 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://imav_2017/meshes/quadrotor/quadrotor_4.dae"/>
+          <mesh filename="file:///github/falco_ws/src/drone/meshes/quadrotor/quadrotor_base.dae"/>
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://imav_2017/meshes/quadrotor/quadrotor_4.stl"/>
+          <mesh filename="file:///github/falco_ws/src//drone/meshes/quadrotor/quadrotor_base.stl"/>
         </geometry>
       </collision>
     </link>
