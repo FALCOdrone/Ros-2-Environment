@@ -4,21 +4,25 @@
 CONTAINER_NAME="Falco_container"
 IMAGE_NAME="lorenzo195815/ros2_env:latest"
 
-# Pull the latest image
-echo "Pulling the latest image: $IMAGE_NAME..."
-docker pull $IMAGE_NAME
+# Remove any existing ARM64 image and build local AMD64 image
+echo "Removing existing ARM64 image and building local AMD64 image..."
+docker rmi "$IMAGE_NAME" 2>/dev/null || true
+cd "$(dirname "$0")/../docker"
+chmod +x build.sh
+./build.sh
+cd - > /dev/null
 
 # Check if the container exists
 if docker ps -a --format "{{.Names}}" | grep -q "^$CONTAINER_NAME$"; then
     echo "Container $CONTAINER_NAME exists."
 
     # Check if the container is running
-    if [ "$(docker inspect -f "{{.State.Running}}" $CONTAINER_NAME 2>/dev/null)" == "true" ]; then
-        echo "Container $CONTAINER_NAME is running. Stopping it now..."
+    if [ "$(docker inspect -f '{{.State.Running}}' $CONTAINER_NAME)" == "true" ]; then
+        echo "Container $CONTAINER_NAME is running. Stopping and removing..."
         docker stop $CONTAINER_NAME
         docker rm $CONTAINER_NAME
     else
-        echo "Container $CONTAINER_NAME is not running."
+        echo "Container $CONTAINER_NAME is not running. Removing..."
         docker rm $CONTAINER_NAME
     fi
 else
@@ -27,18 +31,23 @@ fi
 
 # Ensure the local 'data' and 'ros2_ws' folders exist
 PWD_DIR=$(pwd)
-echo "pw: $PWD_DIR "
+echo "pw: $PWD_DIR"
 DATA_FOLDER="$PWD_DIR/../data"
 ROS2_WS_FOLDER="$PWD_DIR/../ros2_ws"
 
 mkdir -p "$DATA_FOLDER"
 mkdir -p "$ROS2_WS_FOLDER"
 
+# Create the Docker network if it doesn't exist
+docker network create ros 2>/dev/null || true
+
 # Run the container
 docker run -it \
+    --platform linux/amd64 \
     --user robotics \
-    --env="DISPLAY=novnc:0.0" \
+    --env="DISPLAY=$DISPLAY" \
     --env="QT_X11_NO_MITSHM=1" \
+    --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
     --net=ros \
     --rm \
     --volume="$DATA_FOLDER:/home/robotics/data" \
