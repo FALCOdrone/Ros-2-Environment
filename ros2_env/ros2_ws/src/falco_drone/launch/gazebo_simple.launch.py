@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
@@ -5,16 +7,12 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
-    IncludeLaunchDescription,
     SetEnvironmentVariable,
     ExecuteProcess,
-    TimerAction,
 )
-from launch.substitutions import Command, LaunchConfiguration, EnvironmentVariable
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, EnvironmentVariable
 
 from launch_ros.actions import Node
-from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -22,10 +20,7 @@ def generate_launch_description():
     pkg_share = get_package_share_directory("falco_drone")
     share_root = str(Path(pkg_share).parent)
 
-    ros_distro = os.environ["ROS_DISTRO"]
-    is_ignition = "True" if ros_distro == "humble" else "False"
-
-    # Set Ignition resource paths (chaining existing with new)
+    # Set Ignition resource paths
     ign_gazebo_resource_path = SetEnvironmentVariable(
         name="IGN_GAZEBO_RESOURCE_PATH",
         value=[
@@ -43,13 +38,7 @@ def generate_launch_description():
         ],
     )
 
-    # Log to screen so we can verify inside the launch
-    log_env = ExecuteProcess(
-        cmd=["bash", "-lc", "echo IGN_GAZEBO_RESOURCE_PATH=$IGN_GAZEBO_RESOURCE_PATH"],
-        output="screen",
-    )
-
-    # Launch arguments for Gazebo
+    # Launch arguments
     world_arg = DeclareLaunchArgument(
         name="world",
         default_value="empty.sdf",
@@ -58,20 +47,28 @@ def generate_launch_description():
 
     gui_arg = DeclareLaunchArgument(
         name="gui",
-        default_value="false",  # Default to headless to avoid X11 issues
-        description="Start Gazebo with GUI"
+        default_value="true",  # Enable GUI by default
+        description="Start Gazebo with GUI (true/false)"
     )
 
-    # Start Ignition Gazebo with better error handling
-    gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [os.path.join(get_package_share_directory("ros_gz_sim"), "launch"), "/gz_sim.launch.py"]
-        ),
-        launch_arguments=[
-            ("gz_args", [" -v 4", " -r", " -s", " ", LaunchConfiguration("world")]),  # Added -s for server-only mode
-        ],
+    verbose_arg = DeclareLaunchArgument(
+        name="verbose",
+        default_value="true",
+        description="Enable verbose output"
     )
-    
+
+    # Gazebo with GUI support
+    gazebo_server = ExecuteProcess(
+        cmd=[
+            'ign', 'gazebo', 
+            '-v', '4',          # Verbose level 4
+            '-r',               # Run simulation immediately
+            LaunchConfiguration("world")  # Removed -s flag to enable GUI
+        ],
+        output='screen',
+        shell=False
+    )
+
     # ROS-Gazebo bridge for essential topics
     gz_ros2_bridge = Node(
         package="ros_gz_bridge",
@@ -79,19 +76,26 @@ def generate_launch_description():
         arguments=[
             "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock]",
             "/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V]",
-            "/tf_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V]"
         ],
-        output="screen"
+        output="screen",
+        parameters=[{'use_sim_time': True}]
+    )
+
+    # Log environment for debugging
+    log_env = ExecuteProcess(
+        cmd=["bash", "-c", "echo 'Gazebo Simple Launch Started' && echo 'IGN_GAZEBO_RESOURCE_PATH='$IGN_GAZEBO_RESOURCE_PATH"],
+        output="screen",
     )
 
     return LaunchDescription(
         [
-            log_env,
             world_arg,
             gui_arg,
+            verbose_arg,
             ign_gazebo_resource_path,
             gz_sim_resource_path,
-            gazebo,
+            log_env,
+            gazebo_server,
             gz_ros2_bridge,
         ]
     )

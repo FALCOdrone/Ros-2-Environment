@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+
+<robot name="quadrotor_wrench_control" xmlns:xacro="http://wiki.ros.org/xacro" >
+
+    <!-- Declare the 'id' argument -->
+    <xacro:arg name="id" default="0"/>
+
+    <!-- Use the argument -->
+    <xacro:property name="ID" value="$(arg id)" />
+    <xacro:property name="robot_name" value="quadrotor_$(arg id)" />
+
+    <xacro:property name="M_PI" value="3.1415926535897931" />
+    
+    <!-- Included URDF Files -->
+
+    <!-- Base airframe -->
+    <xacro:include filename="$(find falco_drone)/urdf/quadrotor_base.urdf.xacro" />    
+    <xacro:quadrotor_base_macro/>
+    
+    <!-- IMU and sensors (simplified) -->
+    <xacro:include filename="$(find falco_drone)/urdf/sensors/quadrotor_sensors.urdf.xacro" />
+    <xacro:quadrotor_sensors robot_name="${robot_name}"/>
+      
+    <!-- Forward facing camera -->  
+    <xacro:include filename="$(find falco_drone)/urdf/sensors/generic_camera.urdf.xacro" />
+    <xacro:generic_camera name="front" robot_name="${robot_name}" parent="base_link" update_rate="60" res_x="640" res_y="360" image_format="R8G8B8" hfov="${81*M_PI/180}">
+      <origin xyz="0.21 0.0 0.01" rpy="0 0 0"/>
+    </xacro:generic_camera>
+    
+    <!-- Simple wrench control plugin -->
+    <gazebo reference="base_link">
+      <plugin filename="gz-sim-apply-link-wrench-system" 
+              name="gz::sim::systems::ApplyLinkWrench">
+        <link_name>base_link</link_name>
+        <wrench_topic>/model/${robot_name}/link/base_link/wrench</wrench_topic>
+      </plugin>
+    </gazebo>
+    
+</robot>

@@ -2,6 +2,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.substitutions import LaunchConfiguration, Command
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 import os
 
 from ament_index_python.packages import get_package_share_directory
@@ -10,7 +11,7 @@ def generate_launch_description():
     model_path = os.path.join(
         get_package_share_directory('falco_drone'),
         'urdf',
-        'quadrotor.urdf.xacro'
+        'quadrotor_controllable.urdf.xacro'  # Use the controllable version with Ignition plugins
     )
 
     return LaunchDescription([
@@ -20,6 +21,7 @@ def generate_launch_description():
         DeclareLaunchArgument(name='R', default_value='0'),
         DeclareLaunchArgument(name='P', default_value='0'),
         DeclareLaunchArgument(name='Y', default_value='0'),
+        DeclareLaunchArgument(name='drone_id', default_value='0'),
 
         # Robot state publisher with xacro
         Node(
@@ -28,16 +30,19 @@ def generate_launch_description():
             name='robot_state_publisher',
             output='screen',
             parameters=[{
-                'robot_description': Command(['xacro ', model_path])
+                'robot_description': ParameterValue(
+                    Command(['xacro ', model_path, ' id:=', LaunchConfiguration('drone_id')]),
+                    value_type=str
+                )
             }]
         ),
 
-        # Spawn robot in Gazebo
+        # Spawn robot in Ignition Gazebo (compatible with gz_sim)
         ExecuteProcess(
             cmd=[
-                'ros2', 'run', 'gazebo_ros', 'spawn_entity.py',
+                'ros2', 'run', 'ros_gz_sim', 'create',
                 '-topic', 'robot_description',
-                '-entity', 'quadrotor',
+                '-name', 'quadrotor',
                 '-x', LaunchConfiguration('x'),
                 '-y', LaunchConfiguration('y'),
                 '-z', LaunchConfiguration('z'),

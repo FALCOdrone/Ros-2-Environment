@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+
+<robot name="quadrotor_simple" xmlns:xacro="http://wiki.ros.org/xacro" >
+
+    <!-- Declare the 'id' argument -->
+    <xacro:arg name="id" default="0"/>
+
+    <!-- Use the argument -->
+    <xacro:property name="ID" value="$(arg id)" />
+    <xacro:property name="robot_name" value="quadrotor_$(arg id)" />
+
+    <xacro:property name="M_PI" value="3.1415926535897931" />
+    
+    <!-- Simple base link -->
+    <link name="base_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <mass value="1.477" />
+        <inertia ixx="0.01152" ixy="0.0" ixz="0.0" iyy="0.01152" iyz="0.0" izz="0.0218" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="0.3 0.3 0.1"/>
+        </geometry>
+        <material name="red">
+          <color rgba="1 0 0 1"/>
+        </material>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="0.3 0.3 0.1"/>
+        </geometry>
+      </collision>
+    </link>
+    
+    <!-- Add basic physics and control -->
+    <gazebo>
+      <!-- Physics system -->
+      <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics">
+      </plugin>
+      
+      <!-- Apply link wrench system for force control -->
+      <plugin filename="gz-sim-apply-link-wrench-system" 
+              name="gz::sim::systems::ApplyLinkWrench">
+      </plugin>
+      
+      <!-- User commands -->
+      <plugin filename="gz-sim-user-commands-system" 
+              name="gz::sim::systems::UserCommands">
+      </plugin>
+    </gazebo>
+    
+    <!-- Force control on base link -->
+    <gazebo reference="base_link">
+      <plugin filename="gz-sim-apply-link-wrench-system" 
+              name="gz::sim::systems::ApplyLinkWrench">
+        <link_name>base_link</link_name>
+        <wrench_topic>/model/${robot_name}/link/base_link/wrench</wrench_topic>
+      </plugin>
+    </gazebo>
+    
+</robot>

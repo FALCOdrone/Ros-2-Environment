@@ -8,7 +8,6 @@ from launch.actions import (
     IncludeLaunchDescription,
     SetEnvironmentVariable,
     ExecuteProcess,
-    TimerAction,
 )
 from launch.substitutions import Command, LaunchConfiguration, EnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -25,7 +24,21 @@ def generate_launch_description():
     ros_distro = os.environ["ROS_DISTRO"]
     is_ignition = "True" if ros_distro == "humble" else "False"
 
-    # Set Ignition resource paths (chaining existing with new)
+    # Declare the URDF/model argument
+    model_arg = DeclareLaunchArgument(
+        name="model",
+        default_value=os.path.join(pkg_share, "urdf", "quadrotor_controllable.urdf.xacro"),
+        description="Absolute path to robot urdf file",
+    )
+
+    # World file argument
+    world_arg = DeclareLaunchArgument(
+        name="world",
+        default_value=os.path.join(pkg_share, "worlds", "empty.world"),
+        description="World file for simulation",
+    )
+
+    # Set Gazebo resource paths
     ign_gazebo_resource_path = SetEnvironmentVariable(
         name="IGN_GAZEBO_RESOURCE_PATH",
         value=[
@@ -43,32 +56,40 @@ def generate_launch_description():
         ],
     )
 
-    # Log to screen so we can verify inside the launch
-    log_env = ExecuteProcess(
-        cmd=["bash", "-lc", "echo IGN_GAZEBO_RESOURCE_PATH=$IGN_GAZEBO_RESOURCE_PATH"],
-        output="screen",
-    )
+    # Generate the robot_description parameter
+    robot_description = ParameterValue(
+        Command(["xacro ",
+                LaunchConfiguration("model"),
+                " is_ignition:=",
+                is_ignition]),
+                value_type=str)
 
-    # Launch arguments for Gazebo
-    world_arg = DeclareLaunchArgument(
-        name="world",
-        default_value="empty.sdf",
-        description="World file name to load"
+    # Robot state publisher
+    robot_state_publisher_node = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        parameters=[{"robot_description": robot_description, "use_sim_time": True}],
     )
-
-    gui_arg = DeclareLaunchArgument(
-        name="gui",
-        default_value="false",  # Default to headless to avoid X11 issues
-        description="Start Gazebo with GUI"
-    )
-
-    # Start Ignition Gazebo with better error handling
+    
+    # Gazebo simulation
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [os.path.join(get_package_share_directory("ros_gz_sim"), "launch"), "/gz_sim.launch.py"]
         ),
-        launch_arguments=[
-            ("gz_args", [" -v 4", " -r", " -s", " ", LaunchConfiguration("world")]),  # Added -s for server-only mode
+        launch_arguments=[("gz_args", [" -v 4", " -r", " empty.sdf"])],
+    )
+    
+    # Spawn drone entity
+    gz_spawn_entity = Node(
+        package="ros_gz_sim",
+        executable="create",
+        output="screen",
+        arguments=[
+            "-topic", "robot_description", 
+            "-name", "quadrotor_0",
+            "-x", "0.0",
+            "-y", "0.0", 
+            "-z", "0.5"
         ],
     )
     
@@ -78,20 +99,26 @@ def generate_launch_description():
         executable="parameter_bridge",
         arguments=[
             "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock]",
+            "/quadrotor_0/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist",
+            "/quadrotor_0/imu@sensor_msgs/msg/Imu[gz.msgs.IMU]",
+            "/quadrotor_0/ground_truth/state@nav_msgs/msg/Odometry[gz.msgs.Odometry]",
             "/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V]",
-            "/tf_static@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V]"
+            "/quadrotor_0/front/image_raw@sensor_msgs/msg/Image[gz.msgs.Image]",
         ],
-        output="screen"
+        remappings=[
+            ("/quadrotor_0/cmd_vel", "/cmd_vel"),
+        ]
     )
 
     return LaunchDescription(
         [
-            log_env,
+            model_arg,
             world_arg,
-            gui_arg,
             ign_gazebo_resource_path,
             gz_sim_resource_path,
+            robot_state_publisher_node,
             gazebo,
+            gz_spawn_entity,
             gz_ros2_bridge,
         ]
     )

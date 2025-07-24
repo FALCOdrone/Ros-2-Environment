@@ -9,9 +9,6 @@ ENV COLCON_PARALLEL_WORKERS=1
 
 # Update and install OS dependencies
 RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    lsb-release \
     gnupg2 \
     build-essential \
     python3-colcon-common-extensions \

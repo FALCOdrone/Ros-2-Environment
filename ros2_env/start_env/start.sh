@@ -4,13 +4,17 @@
 CONTAINER_NAME="Falco_container"
 IMAGE_NAME="lorenzo195815/ros2_env:latest"
 
-# Remove any existing ARM64 image and build local AMD64 image
-echo "Removing existing ARM64 image and building local AMD64 image..."
-docker rmi "$IMAGE_NAME" 2>/dev/null || true
-cd "$(dirname "$0")/../docker"
-chmod +x build.sh
-./build.sh
-cd - > /dev/null
+# Check if the image exists
+echo "Checking if Docker image $IMAGE_NAME exists..."
+if [[ "$(docker images -q $IMAGE_NAME 2> /dev/null)" == "" ]]; then
+    echo "Image not found. Building image..."
+    cd "$(dirname "$0")/../docker"
+    chmod +x build.sh
+    ./build.sh
+    cd - > /dev/null
+else
+    echo "Image $IMAGE_NAME already exists. Skipping build."
+fi
 
 # Check if the container exists
 if docker ps -a --format "{{.Names}}" | grep -q "^$CONTAINER_NAME$"; then
