@@ -21,6 +21,23 @@ RUN apt-get update && apt-get install -y \
     ros-humble-ros-gz-sim \
     ros-humble-ros-gz-bridge \
     ros-humble-ros-gz \
+    ros-humble-gazebo-ros-pkgs \
+    ros-humble-geometry-msgs \
+    ros-humble-sensor-msgs \
+    ros-humble-nav-msgs \
+    ros-humble-std-msgs \
+    ros-humble-tf2-ros \
+    ros-humble-tf2-geometry-msgs \
+    ros-humble-joint-state-publisher \
+    ros-humble-robot-state-publisher \
+    ros-humble-xacro \
+    ros-humble-joy \
+    wget \
+    curl \
+    unzip \
+    lsb-release \
+    mesa-utils \
+    gazebo \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
@@ -38,14 +55,37 @@ WORKDIR /home/robotics
 RUN mkdir -p /home/robotics/ros2_ws/src
 WORKDIR /home/robotics/ros2_ws/src
 
+# Copy falco_drone package from host
+COPY --chown=robotics:robotics ros2_ws/src/falco_drone ./falco_drone
+
 # Clone the ros2_control_demos repository
 RUN git clone https://github.com/ros-controls/ros2_control_demos.git -b humble
+
+# Clone sjtu_drone repository
+RUN git clone https://github.com/NovoG93/sjtu_drone.git -b ros2
+
+# Download Gazebo models for sjtu_drone
+RUN curl -L https://github.com/osrf/gazebo_models/archive/refs/heads/master.zip -o /tmp/gazebo_models.zip \
+    && unzip /tmp/gazebo_models.zip -d /tmp && mkdir -p ~/.gazebo/models/ && mv /tmp/gazebo_models-master/* ~/.gazebo/models/ \
+    && rm -r /tmp/gazebo_models.zip
 
 # Move back to root of workspace
 WORKDIR /home/robotics/ros2_ws
 
-# Source ROS setup and build the workspace
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --symlink-install"
+# Initialize rosdep if not already done
+RUN rosdep init || true
+
+# Update rosdep with retries for network issues
+RUN for i in {1..5}; do rosdep update && break || sleep 10; done
+
+# Install dependencies with retries and skip problematic packages
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
+    for i in {1..3}; do \
+        rosdep install -r -y --from-paths src --ignore-src --rosdistro humble --skip-keys 'ign_ros2_control gz_ros2_control' && break || sleep 15; \
+    done"
+
+# Build the workspace with limited parallelism
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --symlink-install --parallel-workers 2 --packages-select sjtu_drone_description sjtu_drone_bringup sjtu_drone_control falco_drone"
 
 # Set working directory
 WORKDIR /home/robotics

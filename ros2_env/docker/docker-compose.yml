@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  ros2_env:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lorenzo195815/ros2_env:latest
+    container_name: ros2_sjtu_drone
+    privileged: true
+    network_mode: host
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - XAUTHORITY=${XAUTH:-/tmp/.docker.xauth}
+    volumes:
+      # X11 forwarding
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTH:-/tmp/.docker.xauth}:${XAUTH:-/tmp/.docker.xauth}:rw
+      # Mount your workspace for development
+      - ../ros2_ws:/home/robotics/ros2_ws:rw
+      # Mount the sjtu_drone source from host
+      - ../ros2_ws/src/sjtu_drone:/home/robotics/ros2_ws/src/sjtu_drone:rw
+    working_dir: /home/robotics/ros2_ws
+    stdin_open: true
+    tty: true
+    command: >
+      bash -c "source /opt/ros/humble/setup.bash && 
+               source install/setup.bash && 
+               exec bash"
