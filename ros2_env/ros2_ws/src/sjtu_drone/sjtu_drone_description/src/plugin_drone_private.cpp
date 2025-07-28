@@ -186,6 +186,8 @@ void DroneSimpleControllerPrivate::LoadControllerSettings(
   gazebo::physics::ModelPtr _model,
   sdf::ElementPtr _sdf)
 {
+  // Load PID parameters from SDF -> is a common method to load parameters in Gazebo plugins
+
   controllers_.roll.Load(_sdf, "rollpitch");
   controllers_.pitch.Load(_sdf, "rollpitch");
   controllers_.yaw.Load(_sdf, "yaw");
@@ -473,7 +475,7 @@ void DroneSimpleControllerPrivate::UpdateDynamics(double dt)
   // Get gravity
   ignition::math::v6::Vector3<double> gravity_body = pose.Rot().RotateVector(world->Gravity());
   double gravity = gravity_body.Length();
-  double load_factor = gravity * gravity / world->Gravity().Dot(gravity_body);  // Get gravity
+  double load_factor = gravity * gravity / world->Gravity().Dot(gravity_body);  // Get gravity  
 
   // Rotate vectors to coordinate frames relevant for control
   ignition::math::v6::Quaternion<double> heading_quaternion(cos(euler[2] / 2), 0.0, 0.0,
@@ -574,13 +576,13 @@ void DroneSimpleControllerPrivate::UpdateDynamics(double dt)
   if (navi_state == LANDED_MODEL) {
 
   } else if (navi_state == FLYING_MODEL) {
-    link->AddRelativeForce(force);
+    link->AddRelativeForce(force); // Apply the force to the drone
     link->AddRelativeTorque(torque);
   } else if (navi_state == TAKINGOFF_MODEL) {
-    link->AddRelativeForce(force * 1.5);
+    link->AddRelativeForce(force * 1.5); // Increase force to take off faster
     link->AddRelativeTorque(torque * 1.5);
   } else if (navi_state == LANDING_MODEL) {
-    link->AddRelativeForce(force * 0.8);
+    link->AddRelativeForce(force * 0.8); // Decrease force to land smoothly
     link->AddRelativeTorque(torque * 0.8);
   }
 

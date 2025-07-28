@@ -56,6 +56,8 @@ double PIDController::update(double new_input, double x, double dx, double dt)
   // limit command
   if (limit > 0.0 && fabs(new_input) > limit) {new_input = (new_input < 0 ? -1.0 : 1.0) * limit;}
 
+  // TODO: include the ekf here to test it along with the visual odometry
+  
   // filter command
   if (dt + time_constant > 0.0) {
     input = (dt * new_input + time_constant * input) / (dt + time_constant);
