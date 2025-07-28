@@ -15,7 +15,7 @@ cd Ros-2-Environment/ros2_env/docker/
 
 ```
 
-Optional but recommended: if you want to install tmux for opening multiple terminal sessions inside the running container, run the below commands inside the container. From how the dockerfile is currently settled up, is required to install it every time you run the container. Therefore, if you quit the running container, tmux will be eliminated and requires to be install installed again. We can think about adding it into the dockerfile and then rebuild it.
+Optional but recommended: if you want to install tmux for opening multiple terminal sessions inside the running container, run the below commands inside the container. From how the dockerfile is currently settled up, is required to install it every time you run the container. Therefore, if you quit the running container, tmux will be eliminated and requires to be installed again. We can think about adding it into the dockerfile and then rebuild it.
 
 ```
 cd ros2_ws/
@@ -33,7 +33,8 @@ ros2 launch sjtu_drone_bringup sjtu_drone_bringup
 
 ```
 
-After create a new tmux session, we need to run the node **drone_position_control.py** , which enables closed loop pose and velocities control for reaching a certain goal position through ```self.move_drone_to_pose(...)``` method.
+After creating a new tmux session, we need to run the node **drone_position_control.py** , which enables to send reference (x, y, z) positions at which the drone will head to. 
+The method that publishes the reference positions is: ```self.move_drone_to_pose(...)```.
 
 ```
 source install/setup.bash 
