@@ -1,3 +1,5 @@
+**INSTRUCTION FOR RUNNING THE SIMULATION**
+
 Here are reported all the instructions for running the simulation on gazebo with **sjtu_drone** and a brief guide regarding how the control system is implemented.
 
 First, build the updated image with the new packages required for running the new environment settings:
@@ -49,3 +51,22 @@ Currently the PID control system is implemented through plugins loaded into gaze
 - Implementing the UpdateDynamics method, which is responsible for updating the drone's dynamics based on the current state and the PID control inputs. This method applies the PID control outputs to the drone's motors to achieve the desired flight behavior.
 
 In **drone_position_control.py**, we can manage to control the drone in high level, by setting target positions to be reached. It is also been added a safety mechanism that allows the drone to land safely if it is colse to the targed altitude, which is controlled by the ```self.landing_timer```. This timer is set to trigger a landing operation if the drone has a vertical distance with respect to the gournd close to the targed altitude.
+
+**ADDITIONAL INFORMATION**
+
+If you want to modify the drone's parameters (e.g. mass or inertia), you should edit the file **sjtu_drone.urdf.xacro**. The latter file is located in the urdf folder. 
+
+After the parameters are modified, you need to run the updated .xacro file as follows:
+
+```
+cd /home/lorenzo/Ros-2-Environment/ros2_env/ros2_ws/src/sjtu_drone/sjtu_drone_description/urdf/
+ros2 run xacro xacro sjtu_drone.urdf.xacro > sjtu_drone.urdf
+```
+
+The latter command generates a new .urdf file that incorporates the changes made in the .xacro file.
+Then, a new .sdf file needs to be generated in order to incorporate the changes made in the .urdf file. This can be done running the following command:
+
+```
+cd /home/lorenzo/Ros-2-Environment/ros2_env/ros2_ws/src/sjtu_drone/sjtu_drone_description/models/sjtu_drone/
+gz sdf -p ../../urdf/sjtu_drone.urdf > sjtu_drone.sdf
+```
