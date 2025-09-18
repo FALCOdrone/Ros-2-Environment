@@ -6,7 +6,7 @@ First, build the updated image with the new packages required for running the ne
 
 ```
 cd Ros-2-Environment/ros2_env/
-./build_docker.sh
+./build.sh
 
 ```
 After, run the created docker container after building:
