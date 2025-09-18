@@ -61,10 +61,7 @@ COPY --chown=robotics:robotics ros2_ws/src/falco_drone ./falco_drone
 # Clone the ros2_control_demos repository
 RUN git clone https://github.com/ros-controls/ros2_control_demos.git -b humble
 
-# Clone sjtu_drone repository
-RUN git clone https://github.com/NovoG93/sjtu_drone.git -b ros2
-
-# Download Gazebo models for sjtu_drone
+# Download Gazebo models for falco_drone
 RUN curl -L https://github.com/osrf/gazebo_models/archive/refs/heads/master.zip -o /tmp/gazebo_models.zip \
     && unzip /tmp/gazebo_models.zip -d /tmp && mkdir -p ~/.gazebo/models/ && mv /tmp/gazebo_models-master/* ~/.gazebo/models/ \
     && rm -r /tmp/gazebo_models.zip
@@ -85,7 +82,7 @@ RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
     done"
 
 # Build the workspace with limited parallelism
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --symlink-install --parallel-workers 2 --packages-select sjtu_drone_description sjtu_drone_bringup sjtu_drone_control falco_drone"
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --symlink-install --parallel-workers 2 --packages-select falco_drone_description falco_drone_bringup falco_drone_control"
 
 # Set working directory
 WORKDIR /home/robotics

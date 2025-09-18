@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: lorenzo195815/ros2_env:latest
-    container_name: ros2_sjtu_drone
+    container_name: ros2_falco_drone
     privileged: true
     network_mode: host
     environment:
@@ -19,8 +19,8 @@ services:
       - ${XAUTH:-/tmp/.docker.xauth}:${XAUTH:-/tmp/.docker.xauth}:rw
       # Mount your workspace for development
       - ../ros2_ws:/home/robotics/ros2_ws:rw
-      # Mount the sjtu_drone source from host
-      - ../ros2_ws/src/sjtu_drone:/home/robotics/ros2_ws/src/sjtu_drone:rw
+      # Mount the falco_drone source from host
+      - ../ros2_ws/src/falco_drone:/home/robotics/ros2_ws/src/falco_drone:rw
     working_dir: /home/robotics/ros2_ws
     stdin_open: true
     tty: true
