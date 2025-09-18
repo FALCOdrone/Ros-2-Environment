@@ -13,15 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from std_msgs.msg import Empty, Bool, Int8, String
 from geometry_msgs.msg import Twist, Pose, Vector3
 from sensor_msgs.msg import Range, Image, Imu
+import time
 
 STATES = {
     0: "Landed",
     1: "Flying",
     2: "Taking off",
     3: "Landing",
+    4: "Hovering"
 }
 
 MODES = ["velocity", "position"]
@@ -30,33 +33,60 @@ MODES = ["velocity", "position"]
 class DroneObject(Node):
     def __init__(self, node_name: str = "drone_node"):
         super().__init__(node_name)
-        self._state = STATES[0]
-        self._mode = MODES[0]
-        self._hover_distance = 0.0
-        self.isFlying = False
-        self.isPosctrl = False
-        self.isVelMode = False
+        self._state = STATES[0] # Default state is landed
+        self._mode = MODES[0] # Default mode is velocity
+        self._hover_distance = 5.0 # Hover distance from the ground
+        self.isFlying = False # Flag to indicate if the drone is flying
+        self.isPosctrl = False # Position control mode
+        self.isVelMode = False # Velocity control mode
+        self.isArming = True  # Flag to indicate if the drone is armed (true by default for simulation)
+        self.isTakingOff = False  # Flag to indicate if the drone is taking off
 
         self.logger = self.get_logger()
 
+        # Define QoS profiles for better reliability
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+
         # Publishers
-        self.pubTakeOff = self.create_publisher(Empty, '/simple_drone/takeoff', 1024)
-        self.pubLand = self.create_publisher(Empty, '/simple_drone/land', 1024)
-        self.pubReset = self.create_publisher(Empty, '/simple_drone/reset', 1024)
-        self.pubPosCtrl = self.create_publisher(Bool, '/simple_drone/posctrl', 1024)
-        self.pubCmd = self.create_publisher(Twist, '/simple_drone/cmd_vel', 1024)
-        self.pubVelMode = self.create_publisher(Bool, '/simple_drone/dronevel_mode', 1024)
+        self.pubTakeOff = self.create_publisher(Empty, '/simple_drone/takeoff', qos_profile)
+        self.pubLand = self.create_publisher(Empty, '/simple_drone/land', qos_profile)
+        self.pubReset = self.create_publisher(Empty, '/simple_drone/reset', qos_profile)
+        self.pubPosCtrl = self.create_publisher(Bool, '/simple_drone/posctrl', qos_profile)
+        self.pubCmd = self.create_publisher(Twist, '/simple_drone/cmd_vel', qos_profile)
+        self.pubVelMode = self.create_publisher(Bool, '/simple_drone/dronevel_mode', qos_profile)
 
         # Subscribers
-        self.sub_sonar = self.create_subscription(Range, '/simple_drone/sonar/out', self.cb_sonar, 1024)
-        self.sub_imu = self.create_subscription(Imu, '/simple_drone/imu/out', self.cb_imu, 1024)
+        self.sub_sonar = self.create_subscription(Range, '/simple_drone/sonar/out', self.cb_sonar, qos_profile)
+        self.sub_imu = self.create_subscription(Imu, '/simple_drone/imu/out', self.cb_imu, qos_profile)
         self.sub_front_img = self.create_subscription(Image, '/simple_drone/front/image_raw',
-                                                      self.cb_front_img, 1024)
+                                                      self.cb_front_img, qos_profile)
         self.sub_bottom_img = self.create_subscription(Image, '/simple_drone/bottom/image_raw',
-                                                       self.cb_bottom_img, 1024)
-        self.sub_gt_pose = self.create_subscription(Pose, '/simple_drone/gt_pose', self.cb_gt_pose, 1024)
-        self.sub_state = self.create_subscription(Int8, '/simple_drone/state', self.cb_state, 1024)
-        self.sub_cmd_mode = self.create_subscription(String, '/simple_drone/cmd_mode', self.cb_cmd_mode, 1024)
+                                                       self.cb_bottom_img, qos_profile)
+        self.sub_gt_pose = self.create_subscription(Pose, '/simple_drone/gt_pose', self.cb_gt_pose, qos_profile)
+        self.sub_state = self.create_subscription(Int8, '/simple_drone/state', self.cb_state, qos_profile)
+        self.sub_cmd_mode = self.create_subscription(String, '/simple_drone/cmd_mode', self.cb_cmd_mode, qos_profile)
+        self.sub_emergency_land = self.create_subscription(Bool, '/simple_drone/emergency_land',
+                                                          self.emergency_land, qos_profile)
+
+        # subscribe to the starting button topic for taking off the drone -> for now publish the starting button
+        # use `ros2 topic pub /start_button std_msgs/msg/Int8 "data: 1"` to take off the drone
+        self.start_button_subscriber = self.create_subscription(
+            Int8,
+            '/start_button',
+            self.start_button_callback,
+            qos_profile
+        )
+        # subscribe to armed boolean topic to monitor arming status
+        self.armed_subscriber = self.create_subscription(
+            Bool,
+            '/is_armed',
+            self.armed_callback,
+            qos_profile
+        )
 
         self._sonar = Range()
         self._imu = Imu()
@@ -136,24 +166,56 @@ class DroneObject(Node):
         Take off the drone
         :return: True if the command was sent successfully, False if drone is already flying
         """
-        if self.isFlying:
+        try:
+            #if self.isFlying:
+            #    return False
+            self.logger.info("Taking off")
+            empty_msg = Empty()
+            self.pubTakeOff.publish(empty_msg)
+            self.isFlying = True
+            return True
+        except Exception as e:
+            self.logger.error(f"Error in takeOff method: {str(e)}")
             return False
-        self.logger.info("Taking off")
-        self.pubTakeOff.publish(Empty())
-        self.isFlying = True
-        return True
+    
+    def check_hover(self):
+        """
+        Check if the drone is hovering
+        :return: True if the drone is hovering, False otherwise.
+        TODO:Implement the same function also with the barometer data.
+        """
+        # Check if we have valid sonar data
+        if not hasattr(self._sonar, 'range') or self._sonar.range <= 0:
+            self.logger.warn("No valid sonar data for hover check")
+            return False
+            
+        sonar_error = abs(self._sonar.range - self._hover_distance)
+        self.logger.info(f"Sonar reading: {self._sonar.range:.2f}m, Hover distance: {self._hover_distance:.2f}m, Error: {sonar_error:.2f}m", throttle_duration_sec=2)
+
+        # Check if drone is flying and altitude is stable (increased tolerance)
+        if self._state == 'Flying' and sonar_error < 0.5:  # More realistic tolerance
+            self.logger.info("Drone is hovering stably.")
+            self._state = 'Hovering'  # Update state to Hovering
+            self.isTakingOff = False  # Reset the takeoff flag
+        elif sonar_error >= 0.5:
+            self.logger.info("Drone altitude is not stable yet.")
 
     def land(self):
         """
         Land the drone
         :return: True if the command was sent successfully, False if drone is not flying
         """
-        if not self.isFlying:
+        try:
+            if not self.isFlying:
+                return False
+            self.logger.info("Landing")
+            empty_msg = Empty()
+            self.pubLand.publish(empty_msg)
+            self.isFlying = False
+            return True
+        except Exception as e:
+            self.logger.error(f"Error in land method: {str(e)}")
             return False
-        self.logger.info("Landing")
-        self.pubLand.publish(Empty())
-        self.isFlying = False
-        return True
 
     def hover(self):
         """
@@ -172,16 +234,21 @@ class DroneObject(Node):
         self.pubCmd.publish(twist_msg)
         return True
 
-    def posCtrl(self, on):
+    def posCtrl(self, flag: bool):
         """
-        Turn on/off position control
-        :param on: True to turn on position control, False to turn off
+        Enable or disable position control mode
+        :param flag: True to enable position control, False to disable
+        :return: True if the command was sent successfully
         """
-        self.isPosctrl = on
-        bool_msg = Bool()
-        bool_msg.data = on
-        self.pubPosCtrl.publish(bool_msg)
-        return True
+        try:
+            self.isPosctrl = flag
+            bool_msg = Bool()
+            bool_msg.data = flag
+            self.pubPosCtrl.publish(bool_msg)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error in posCtrl method: {str(e)}")
+            return False
 
     def velMode(self, on):
         """
@@ -220,17 +287,21 @@ class DroneObject(Node):
         :param z: Z position in m
         :return: True if the command was sent successfully, False if drone is not flying
         """
-        if not self.isFlying:
+        try:
+            if not self.isFlying:
+                return False
+            twist_msg = Twist()
+            twist_msg.linear.x = float(x)
+            twist_msg.linear.y = float(y)
+            twist_msg.linear.z = float(z)
+            twist_msg.angular.x = 0.0
+            twist_msg.angular.y = 0.0
+            twist_msg.angular.z = 0.0
+            self.pubCmd.publish(twist_msg)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error in moveTo method: {str(e)}")
             return False
-        twist_msg = Twist()
-        twist_msg.linear.x = x
-        twist_msg.linear.y = y
-        twist_msg.linear.z = z
-        twist_msg.angular.x = 0.0
-        twist_msg.angular.y = 0.0
-        twist_msg.angular.z = 0.0
-        self.pubCmd.publish(twist_msg)
-        return True
 
     def pitch(self, speed):
         """
@@ -303,40 +374,99 @@ class DroneObject(Node):
         twist_msg.angular.z = speed
         self.pubCmd.publish(twist_msg)
         return True
+    
+    def armed_callback(self, msg):
+        try:
+            #self.isArming = msg.data
+            if self.isArming:
+                self.get_logger().info('Drone is armed and ready for takeoff.')
+            else:
+                self.get_logger().info('Drone is disarmed.')
+        except Exception as e:
+            self.get_logger().error(f"Error in armed callback: {str(e)}")
+
+    def start_button_callback(self, msg):
+        try:
+            if msg.data == 1 and self.isArming:
+                self.get_logger().info('Button pressed, initiating takeoff...')
+                time.sleep(3.0)
+                self.isTakingOff = True
+        except Exception as e:
+            self.get_logger().error(f"Error in start button callback: {str(e)}")
+
+    def emergency_land(self, msg: Bool):
+        try:
+            if self.isFlying and msg.data:
+                self.get_logger().warn('Emergency landing initiated!')
+                time.sleep(1.0)
+                self.land()
+            else:
+                self.get_logger().info('Drone is already landed.')
+        except Exception as e:
+            self.get_logger().error(f"Error in emergency land callback: {str(e)}")
 
     def cb_sonar(self, msg: Range):
         """Callback for the sonar sensor"""
-        self._sonar = msg
-        self._hover_distance = msg.min_range
+        try:
+            self._sonar = msg
+            #self._hover_distance = msg.min_range
+        except Exception as e:
+            self.logger.error(f"Error in sonar callback: {str(e)}")
 
     def cb_imu(self, msg: Imu):
         """Callback for the imu sensor"""
-        self._imu = msg
+        try:
+            self._imu = msg
+        except Exception as e:
+            self.logger.error(f"Error in IMU callback: {str(e)}")
 
     def cb_front_img(self, msg: Image):
         """Callback for the front camera"""
-        self._front_img = msg
+        try:
+            self._front_img = msg
+        except Exception as e:
+            self.logger.error(f"Error in front image callback: {str(e)}")
 
     def cb_bottom_img(self, msg: Image):
         """Callback for the rear camera"""
-        self._bottom_img = msg
+        try:
+            self._bottom_img = msg
+        except Exception as e:
+            self.logger.error(f"Error in bottom image callback: {str(e)}")
 
     def cb_gt_pose(self, msg: Pose) -> None:
         """Callback for the ground truth pose"""
-        self._gt_pose = msg
+        try:
+            self._gt_pose = msg
+        except Exception as e:
+            self.logger.error(f"Error in ground truth pose callback: {str(e)}")
 
     def cb_state(self, msg: Int8):
         """Callback for the drone state"""
-        self._state = STATES[msg.data]
-        self.logger.info("State: {}".format(self._state), throttle_duration_sec=1)
+        try:
+            if msg.data in STATES:
+                self._state = STATES[msg.data]
+                self.logger.info("State: {}".format(self._state), throttle_duration_sec=1)
+            else:
+                self.logger.error(f"Invalid state received: {msg.data}")
+                # Keep current state if invalid
+        except Exception as e:
+            self.logger.error(f"Error in state callback: {str(e)}")
 
     def cb_cmd_mode(self, msg: String):
         """Callback for the command mode"""
-        if msg.data in MODES:
-            self._mode = msg.data
-            self.logger.info("Changed command mode to: {}".format(self._mode))
-        else:
-            self.logger.error("Invalid command mode: {}".format(msg.data))
+        try:
+            if msg.data in MODES:
+                self._mode = msg.data
+                self.logger.info("Changed command mode to: {}".format(self._mode))
+            else:
+                self.logger.error("Invalid command mode: {}".format(msg.data))
+        except Exception as e:
+            self.logger.error(f"Error in command mode callback: {str(e)}")
 
     def reset(self):
-        self.pubReset.publish(Empty())
+        try:
+            empty_msg = Empty()
+            self.pubReset.publish(empty_msg)
+        except Exception as e:
+            self.logger.error(f"Error in reset method: {str(e)}")

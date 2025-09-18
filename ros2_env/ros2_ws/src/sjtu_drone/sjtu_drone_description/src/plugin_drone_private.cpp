@@ -582,8 +582,8 @@ void DroneSimpleControllerPrivate::UpdateDynamics(double dt)
     link->AddRelativeForce(force * 1.5); // Increase force to take off faster
     link->AddRelativeTorque(torque * 1.5);
   } else if (navi_state == LANDING_MODEL) {
-    link->AddRelativeForce(force * 0.8); // Decrease force to land smoothly
-    link->AddRelativeTorque(torque * 0.8);
+    link->AddRelativeForce(force * 0.5); // Decrease force to land smoothly
+    link->AddRelativeTorque(torque * 0.5);
   }
 
   if (pub_odom) {
