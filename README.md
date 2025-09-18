@@ -1,6 +1,6 @@
 **INSTRUCTION FOR RUNNING THE SIMULATION**
 
-Here are reported all the instructions for running the simulation on gazebo with **sjtu_drone** and a brief guide regarding how the control system is implemented.
+Here are reported all the instructions for running the simulation on gazebo with **falco_drone** and a brief guide regarding how the control system is implemented.
 
 First, build the updated image with the new packages required for running the new environment settings:
 
@@ -31,18 +31,18 @@ Now in a new tmux session, build, source to configure the environment so that th
 ```
 colcon build
 source install/setup.bash                           # execute this inside ros2_ws folder 
-ros2 launch sjtu_drone_bringup sjtu_drone_bringup
+ros2 launch falco_drone_bringup falco_drone_bringup
 
 ```
 
 After create a new tmux session, we need to run the node **drone_position_control.py** , which enables closed loop pose and velocities control for reaching a certain goal position through ```self.move_drone_to_pose(...)``` method.
 
 ```
-source install/setup.bash 
-ros2 run sjtu_drone_control drone_position_control
+source install/setup.bash
+ros2 run falco_drone_control drone_position_control
 ```
 
-Currently the PID control system is implemented through plugins loaded into gazebo. So by navigating into ```cd Ros-2-Environment/ros2_env/ros2_ws/src/sjtu_drone/sjtu_drone_description/``` we will find the **plugin_drone_private.cpp** file, which is essential for:
+Currently the PID control system is implemented through plugins loaded into gazebo. So by navigating into ```cd Ros-2-Environment/ros2_env/ros2_ws/src/falco_drone/falco_drone_description/``` we will find the **plugin_drone_private.cpp** file, which is essential for:
 
 - Loading the PID parameters from the sdf file
 - Developing a series of callbacks for reading sensor data, cmd_vel and pose data. In addition, the velocity commands models sensor noise. Furhter callbacks are implemented for gathering the drone state and perform landing and takeoff operations.
@@ -54,19 +54,19 @@ In **drone_position_control.py**, we can manage to control the drone in high lev
 
 **ADDITIONAL INFORMATION**
 
-If you want to modify the drone's parameters (e.g. mass or inertia), you should edit the file **sjtu_drone.urdf.xacro**. The latter file is located in the urdf folder. 
+If you want to modify the drone's parameters (e.g. mass or inertia), you should edit the file **falco_drone.urdf.xacro**. The latter file is located in the urdf folder. 
 
 After the parameters are modified, you need to run the updated .xacro file as follows:
 
 ```
-cd /home/lorenzo/Ros-2-Environment/ros2_env/ros2_ws/src/sjtu_drone/sjtu_drone_description/urdf/
-ros2 run xacro xacro sjtu_drone.urdf.xacro > sjtu_drone.urdf
+cd /home/lorenzo/Ros-2-Environment/ros2_env/ros2_ws/src/falco_drone/falco_drone_description/urdf/
+ros2 run xacro xacro falco_drone.urdf.xacro > falco_drone.urdf
 ```
 
 The latter command generates a new .urdf file that incorporates the changes made in the .xacro file.
 Then, a new .sdf file needs to be generated in order to incorporate the changes made in the .urdf file. This can be done running the following command:
 
 ```
-cd /home/lorenzo/Ros-2-Environment/ros2_env/ros2_ws/src/sjtu_drone/sjtu_drone_description/models/sjtu_drone/
-gz sdf -p ../../urdf/sjtu_drone.urdf > sjtu_drone.sdf
+cd /home/lorenzo/Ros-2-Environment/ros2_env/ros2_ws/src/falco_drone/falco_drone_description/models/falco_drone/
+gz sdf -p ../../urdf/falco_drone.urdf > falco_drone.sdf
 ```
