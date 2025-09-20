@@ -23,6 +23,12 @@ This repository provides a complete simulation environment for the FALCO drone b
 - Sensor simulation with noise modeling
 - Safety mechanisms for autonomous operation
 
+![FALCO Drone Overview](ros2_env/ros2_ws/src/falco_drone/imgs/overview.png)
+
+### System Architecture
+
+The system uses a well-defined transform tree for accurate positioning and control:
+
 ![TF Tree](ros2_env/ros2_ws/src/falco_drone/imgs/tf_tree.png)
 
 ## Prerequisites
@@ -97,6 +103,8 @@ The `drone_position_control` node enables closed-loop pose and velocity control 
 ## Control System Details
 
 The FALCO drone uses a sophisticated control system implemented through Gazebo plugins. The main control components are located in `ros2_env/ros2_ws/src/falco_drone/falco_drone_description/`.
+
+![ROS Graph](ros2_env/ros2_ws/src/falco_drone/imgs/rosgraph.png)
 
 ### PID Control Plugin (`plugin_drone_private.cpp`)
 
