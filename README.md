@@ -1,4 +1,4 @@
-**INSTRUCTION FOR RUNNING THE SIMULATION**
+## INSTRUCTION FOR RUNNING THE SIMULATION
 
 Here are reported all the instructions for running the simulation on gazebo with **falco_drone** and a brief guide regarding how the control system is implemented.
 
@@ -52,7 +52,7 @@ Currently the PID control system is implemented through plugins loaded into gaze
 
 In **drone_position_control.py**, we can manage to control the drone in high level, by setting target positions to be reached. It is also been added a safety mechanism that allows the drone to land safely if it is colse to the targed altitude, which is controlled by the ```self.landing_timer```. This timer is set to trigger a landing operation if the drone has a vertical distance with respect to the gournd close to the targed altitude.
 
-**ADDITIONAL INFORMATION**
+# ADDITIONAL INFORMATION
 
 If you want to modify the drone's parameters (e.g. mass or inertia), you should edit the file **falco_drone.urdf.xacro**. The latter file is located in the urdf folder. 
 
