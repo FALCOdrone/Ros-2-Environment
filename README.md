@@ -9,6 +9,7 @@ A comprehensive ROS 2 simulation environment for the FALCO drone using Gazebo 11
 - [Setup](#setup)
 - [Usage](#usage)
 - [Control System Details](#control-system-details)
+- [Real Time System](#real-time-system)
 - [Configuration](#configuration)
 - [Troubleshooting](#troubleshooting)
 - [Additional Information](#additional-information)
@@ -128,6 +129,9 @@ The position control node provides:
 - Landing timer (`self.landing_timer`) for safe altitude proximity operations
 
 > **Safety Note:** The landing timer triggers automatically when the drone's vertical distance to the ground is close to the target altitude.
+
+## Real Time System
+Currently not implemented yet, but the idea is to integrate ros topics feedbacks to the **Teensy 4.1** serial port.
 
 ## Configuration
 
