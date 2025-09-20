@@ -1,72 +1,189 @@
-**INSTRUCTION FOR RUNNING THE SIMULATION**
+# FALCO Drone ROS 2 Environment
 
-Here are reported all the instructions for running the simulation on gazebo with **falco_drone** and a brief guide regarding how the control system is implemented.
+A comprehensive ROS 2 simulation environment for the FALCO drone using Gazebo 11, featuring advanced PID control systems and high-level position control capabilities.
 
-First, build the updated image with the new packages required for running the new environment settings:
+## Table of Contents
 
-```
+- [Introduction](#introduction)
+- [Prerequisites](#prerequisites)
+- [Setup](#setup)
+- [Usage](#usage)
+- [Control System Details](#control-system-details)
+- [Configuration](#configuration)
+- [Troubleshooting](#troubleshooting)
+- [Additional Information](#additional-information)
+
+## Introduction
+
+This repository provides a complete simulation environment for the FALCO drone built on ROS 2 Humble and Gazebo 11. The simulation includes:
+
+- Realistic drone physics and dynamics
+- PID-based flight control system
+- High-level position control interface
+- Sensor simulation with noise modeling
+- Safety mechanisms for autonomous operation
+
+![TF Tree](ros2_env/ros2_ws/src/falco_drone/imgs/tf_tree.png)
+
+## Prerequisites
+
+Before running the simulation, ensure you have:
+
+- Docker installed on your system
+- Basic knowledge of ROS 2 and Gazebo
+- Terminal access with bash support
+
+## Setup
+
+### 1. Build the Docker Environment
+
+First, build the updated Docker image with all required packages:
+
+```bash
 cd Ros-2-Environment/ros2_env/
 ./build.sh
-
 ```
-After, run the created docker container after building:
 
-```
+### 2. Run the Docker Container
+
+After building, start the Docker container:
+
+```bash
 cd Ros-2-Environment/ros2_env/docker/
 ./start_integrated.sh
-
 ```
 
-Optional but recommended: if you want to install tmux for opening multiple terminal sessions inside the running container, run the below commands inside the container. From how the dockerfile is currently settled up, is required to install it every time you run the container. Therefore, if you quit the running container, tmux will be eliminated and requires to be install installed again. We can think about adding it into the dockerfile and then rebuild it.
+### 3. Install tmux (Optional but Recommended)
 
-```
+> **Note:** tmux needs to be installed each time you run the container due to the current Dockerfile configuration.
+
+```bash
 cd ros2_ws/
 sudo apt-get update
 sudo apt install tmux
-
 ```
 
-Now in a new tmux session, build, source to configure the environment so that the packages built within a specific workspace are accessible in the current terminal session and launch the drone model along with gazebo11 and the world:
+## Usage
 
-```
+### 1. Build and Launch the Simulation
+
+In a new tmux session, build the workspace and launch the simulation:
+
+```bash
+# Build the ROS 2 workspace
 colcon build
-source install/setup.bash                           # execute this inside ros2_ws folder 
-ros2 launch falco_drone_bringup falco_drone_bringup
 
-```
-
-After create a new tmux session, we need to run the node **drone_position_control.py** , which enables closed loop pose and velocities control for reaching a certain goal position through ```self.move_drone_to_pose(...)``` method.
-
-```
+# Source the environment (execute inside ros2_ws folder)
 source install/setup.bash
+
+# Launch the drone simulation with Gazebo
+ros2 launch falco_drone_bringup falco_drone_bringup
+```
+
+### 2. Run Position Control
+
+In a new tmux session, start the position control node:
+
+```bash
+# Source the environment
+source install/setup.bash
+
+# Run the position control node
 ros2 run falco_drone_control drone_position_control
 ```
 
-Currently the PID control system is implemented through plugins loaded into gazebo. So by navigating into ```cd Ros-2-Environment/ros2_env/ros2_ws/src/falco_drone/falco_drone_description/``` we will find the **plugin_drone_private.cpp** file, which is essential for:
+The `drone_position_control` node enables closed-loop pose and velocity control for reaching target positions through the `self.move_drone_to_pose(...)` method.
 
-- Loading the PID parameters from the sdf file
-- Developing a series of callbacks for reading sensor data, cmd_vel and pose data. In addition, the velocity commands models sensor noise. Furhter callbacks are implemented for gathering the drone state and perform landing and takeoff operations.
-- Implementing the publish odometry method, which is used to publish the drone state in the form of a nav_msgs/Odometry message. Notice that are published the odometry data in the base_footprint frame, which is the frame of reference for the drone's position and orientation in the world (odom). Along with the odometry data, the drone's pose is also published in the tf tree, which is essential for visualizing the drone's position and orientation in the Gazebo simulation environment.
-- Implementing the UpdateState method, which handles the identification of the current state of the drone. This includes determining whether the drone is in a flying, landing, or taking off state.
-- Implementing the UpdateDynamics method, which is responsible for updating the drone's dynamics based on the current state and the PID control inputs. This method applies the PID control outputs to the drone's motors to achieve the desired flight behavior.
+## Control System Details
 
-In **drone_position_control.py**, we can manage to control the drone in high level, by setting target positions to be reached. It is also been added a safety mechanism that allows the drone to land safely if it is colse to the targed altitude, which is controlled by the ```self.landing_timer```. This timer is set to trigger a landing operation if the drone has a vertical distance with respect to the gournd close to the targed altitude.
+The FALCO drone uses a sophisticated control system implemented through Gazebo plugins. The main control components are located in `ros2_env/ros2_ws/src/falco_drone/falco_drone_description/`.
 
-**ADDITIONAL INFORMATION**
+### PID Control Plugin (`plugin_drone_private.cpp`)
 
-If you want to modify the drone's parameters (e.g. mass or inertia), you should edit the file **falco_drone.urdf.xacro**. The latter file is located in the urdf folder. 
+The core control system handles:
 
-After the parameters are modified, you need to run the updated .xacro file as follows:
+- **Parameter Loading**: Reads PID parameters from the SDF file
+- **Sensor Callbacks**: Processes sensor data, cmd_vel, and pose data with noise modeling
+- **State Management**: Handles takeoff, landing, and flight state operations
+- **Odometry Publishing**: Publishes drone state as `nav_msgs/Odometry` messages in the `base_footprint` frame
+- **TF Publishing**: Maintains the transform tree for visualization in Gazebo
+- **State Updates**: Manages drone state transitions (flying, landing, taking off)
+- **Dynamics Updates**: Applies PID control outputs to drone motors for desired flight behavior
 
+### High-Level Control (`drone_position_control.py`)
+
+The position control node provides:
+
+- High-level position control interface
+- Target position management
+- **Safety Features**: Automatic landing mechanism when close to target altitude
+- Landing timer (`self.landing_timer`) for safe altitude proximity operations
+
+> **Safety Note:** The landing timer triggers automatically when the drone's vertical distance to the ground is close to the target altitude.
+
+## Configuration
+
+### Modifying Drone Parameters
+
+To customize drone parameters (mass, inertia, etc.):
+
+1. **Edit the XACRO file**:
+   ```bash
+   # Navigate to the URDF directory
+   cd ros2_env/ros2_ws/src/falco_drone/falco_drone_description/urdf/
+   
+   # Edit the drone parameters
+   nano falco_drone.urdf.xacro
+   ```
+
+2. **Generate updated URDF**:
+   ```bash
+   # Generate new URDF file
+   ros2 run xacro xacro falco_drone.urdf.xacro > falco_drone.urdf
+   ```
+
+3. **Generate updated SDF**:
+   ```bash
+   # Navigate to the models directory
+   cd ../models/falco_drone/
+   
+   # Generate new SDF file
+   gz sdf -p ../../urdf/falco_drone.urdf > falco_drone.sdf
+   ```
+
+> **Important:** Both URDF and SDF files must be regenerated after modifying the XACRO file to ensure changes take effect.
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Container Access Issues**: Ensure Docker is properly installed and running
+2. **Build Failures**: Check that all dependencies are correctly installed in the Docker image
+3. **Gazebo Models Missing**: The simulation requires Gazebo models to be downloaded (see package-specific README)
+4. **tmux Not Available**: Remember to install tmux each time you start a new container
+
+### Getting Gazebo Models
+
+If you encounter missing Gazebo models, install them with:
+
+```bash
+curl -L https://github.com/osrf/gazebo_models/archive/refs/heads/master.zip -o /tmp/gazebo_models.zip \
+    && unzip /tmp/gazebo_models.zip -d /tmp && mkdir -p ~/.gazebo/models/ && mv /tmp/gazebo_models-master/* ~/.gazebo/models/ \
+    && rm -r /tmp/gazebo_models.zip
 ```
-cd /home/lorenzo/Ros-2-Environment/ros2_env/ros2_ws/src/falco_drone/falco_drone_description/urdf/
-ros2 run xacro xacro falco_drone.urdf.xacro > falco_drone.urdf
-```
 
-The latter command generates a new .urdf file that incorporates the changes made in the .xacro file.
-Then, a new .sdf file needs to be generated in order to incorporate the changes made in the .urdf file. This can be done running the following command:
+## Additional Information
 
-```
-cd /home/lorenzo/Ros-2-Environment/ros2_env/ros2_ws/src/falco_drone/falco_drone_description/models/falco_drone/
-gz sdf -p ../../urdf/falco_drone.urdf > falco_drone.sdf
-```
+### Package Structure
+
+- **falco_drone_description**: Contains drone models, plugins, and world files
+- **falco_drone_bringup**: Launch files and configuration
+- **falco_drone_control**: Control nodes and algorithms
+
+### Development Notes
+
+- The current Dockerfile setup requires tmux to be installed manually each session
+- Consider adding tmux to the Dockerfile for persistent installation
+- All paths in this documentation use relative references from the repository root
+
+For more detailed information about specific packages, refer to their individual README files in the respective package directories.
