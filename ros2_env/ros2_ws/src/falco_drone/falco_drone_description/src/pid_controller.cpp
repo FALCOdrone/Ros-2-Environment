@@ -1,17 +1,3 @@
-// Copyright 2023 Georg Novotny
-//
-// Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.gnu.org/licenses/gpl-3.0.en.html
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include "falco_drone_description/pid_controller.h"
 
 PIDController::PIDController()
@@ -56,8 +42,6 @@ double PIDController::update(double new_input, double x, double dx, double dt)
   // limit command
   if (limit > 0.0 && fabs(new_input) > limit) {new_input = (new_input < 0 ? -1.0 : 1.0) * limit;}
 
-  // TODO: include the ekf here to test it along with the visual odometry
-  
   // filter command
   if (dt + time_constant > 0.0) {
     input = (dt * new_input + time_constant * input) / (dt + time_constant);

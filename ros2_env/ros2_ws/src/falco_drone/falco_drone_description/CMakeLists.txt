@@ -25,6 +25,7 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 
 link_directories(${GAZEBO_LIBRARY_DIRS} ${Boost_LIBRARIES} ${PROTOBUF_LIBRARIES} ${OGRE_LIBRARY_DIRS})
@@ -101,6 +102,75 @@ set_target_properties(plugin_drone
     LIBRARY_OUTPUT_DIRECTORY
     ${PROJECT_SOURCE_DIR}/plugins
 )
+
+################## 3. Real-time drone controller executable #############
+add_executable(drone_real_time_controller
+    src/drone_real_time_main.cpp
+    src/plugin_drone_real_time_exec.cpp
+    src/plugin_drone_real_time.cpp
+    src/pid_controller.cpp
+)
+
+target_include_directories(drone_real_time_controller PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(drone_real_time_controller
+  "rclcpp"
+  "std_msgs"
+  "geometry_msgs"
+  "sensor_msgs"
+  "nav_msgs"
+  "tf2"
+  "tf2_ros"
+  "tf2_geometry_msgs"
+)
+
+################## 4. EKF executable #############
+add_executable(ekf_node
+    src/ekf_main.cpp
+    src/ekf.cpp
+)
+
+target_include_directories(ekf_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+target_link_libraries(ekf_node Eigen3::Eigen)
+
+ament_target_dependencies(ekf_node
+  "rclcpp"
+  "std_msgs"
+  "geometry_msgs"
+  "sensor_msgs"
+  "nav_msgs"
+)
+
+################## 5. Real-time EKF executable #############
+add_executable(ekf_realtime
+    src/ekf_realtime.cpp
+    src/ekf.cpp
+)
+
+target_include_directories(ekf_realtime PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+target_link_libraries(ekf_realtime Eigen3::Eigen)
+
+ament_target_dependencies(ekf_realtime
+  "rclcpp"
+  "std_msgs"
+  "geometry_msgs"
+  "sensor_msgs"
+  "nav_msgs"
+)
+
+install(TARGETS
+  drone_real_time_controller
+  ekf_node
+  ekf_realtime
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_export_include_directories(
   include

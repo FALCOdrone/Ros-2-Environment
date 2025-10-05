@@ -168,11 +168,6 @@ class DronePositionControl(DroneObject):
             # Reset the flag
             self.landing_in_progress = False
 
-    def land_safety_position(self):
-        """Legacy method - now redirects to new safer landing approach"""
-        self.get_logger().warn('Using legacy land_safety_position method - consider updating code')
-        self.land_now()
-
     def move_drone_to_pose(self, x, y, z):
         """Move drone to specified pose"""
         try:
