@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV MAKEFLAGS="-j1"
 ENV COLCON_PARALLEL_WORKERS=1
 
-# Update and install OS dependencies
+# Update and install OS dependencies including MAVROS
 RUN apt-get update && apt-get install -y \
     gnupg2 \
     build-essential \
@@ -32,6 +32,8 @@ RUN apt-get update && apt-get install -y \
     ros-humble-robot-state-publisher \
     ros-humble-xacro \
     ros-humble-joy \
+    ros-humble-mavros \
+    ros-humble-mavros-extras \
     wget \
     curl \
     unzip \
@@ -40,6 +42,12 @@ RUN apt-get update && apt-get install -y \
     gazebo \
     sudo \
     && rm -rf /var/lib/apt/lists/*
+
+# Install MAVROS geographic datasets
+RUN wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh && \
+    chmod +x install_geographiclib_datasets.sh && \
+    ./install_geographiclib_datasets.sh && \
+    rm install_geographiclib_datasets.sh
 
 # Create robotics user
 RUN useradd -m -s /bin/bash robotics && \
@@ -50,6 +58,9 @@ RUN useradd -m -s /bin/bash robotics && \
 # Switch to robotics user
 USER robotics
 WORKDIR /home/robotics
+
+RUN sudo apt update
+RUN sudo apt install -y tmux
 
 # Set up workspace
 RUN mkdir -p /home/robotics/ros2_ws/src
