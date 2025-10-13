@@ -101,6 +101,12 @@ ros2 run falco_drone_control drone_position_control
 
 The `drone_position_control` node enables closed-loop pose and velocity control for reaching target positions through the `self.move_drone_to_pose(...)` method.
 
+## Publish the button topic
+Publish an integer message for letting the drone to take off
+```bash
+ros2 topic pub /start_button std_msgs/msg/Int8 "data: 1"
+```
+
 ## Control System Details
 
 The FALCO drone uses a sophisticated control system implemented through Gazebo plugins. The main control components are located in `ros2_env/ros2_ws/src/falco_drone/falco_drone_description/`.
