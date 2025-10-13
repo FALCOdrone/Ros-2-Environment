@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import Controllers
 
 class DroneModel:
     def __init__(
@@ -331,56 +331,6 @@ class DroneModel:
         sensor_data = self.get_sensor_readings()
         self.noisy_meas.append((sensor_data['accel'], sensor_data['gyro']))
 
-
-# Real-time integration framework for control systems
-class RealTimeDroneInterface:
-    """
-    Interface for integrating the drone model with real-time sensor data
-    and control systems.
-    """
-    
-    def __init__(self, drone_model, sensor_update_rate=100):
-        self.drone_model = drone_model
-        self.sensor_update_rate = sensor_update_rate  # Hz
-        self.dt_sensor = 1.0 / sensor_update_rate
-        self.last_sensor_time = 0
-        self.control_commands = {'thrust': 0, 'torque': np.zeros(3)}
-        
-    def update_sensor_data(self, imu_data, timestamp):
-        """
-        Update with real IMU data.
-        
-        Args:
-            imu_data: Dictionary with 'accel' and 'gyro' keys
-            timestamp: Current timestamp
-        """
-        if timestamp - self.last_sensor_time >= self.dt_sensor:
-            # Process real sensor data here
-            # This would interface with actual hardware
-            self.last_sensor_time = timestamp
-            return True
-        return False
-    
-    def set_control_command(self, thrust, torque):
-        """Set control commands from controller."""
-        self.control_commands['thrust'] = thrust
-        self.control_commands['torque'] = np.array(torque)
-    
-    def run_simulation_step(self):
-        """Run one simulation step with current control commands."""
-        return self.drone_model.step(
-            self.control_commands['thrust'],
-            self.control_commands['torque']
-        )
-    
-    def get_state_estimate(self):
-        """
-        Get state estimate (this is where sensor fusion would go).
-        For now, returns the noisy sensor state.
-        """
-        return self.drone_model.get_noisy_state()
-
-
 # Example usage and testing
 def run_example_simulation():
     """Example simulation demonstrating the corrected model."""
@@ -398,17 +348,38 @@ def run_example_simulation():
     steps = int(duration / drone.dt)
     
     # Control inputs (simple hover test)
-    hover_thrust = drone.mass * 9.81 + 5  # Compensate gravity
+    #hover_thrust = drone.mass * 9.81 + 5  # Compensate gravity plus some margin
+
+    # Set the reference altitude and attitude
+    ref_xyz = np.array([0.0, 0.0, 1.0])  # Desired position (hover at 1m)
+    ref_attitude = np.zeros(3)  # Roll, pitch, yaw
+    ref_angular_velocity = np.zeros(3)  # p, q, r
+    ref_lin_velocity = np.zeros(3)  # vx, vy, vz
+
+    # Create controller instance
+    controller = Controllers.Controllers()
 
     print(f"Running simulation for {duration} seconds ({steps} steps)...")
     
     for i in range(steps):
         # More dynamic control inputs to better show noise effects
-        thrust = hover_thrust + 2.0 * np.sin(i * drone.dt) + 1.0 * np.cos(i * drone.dt)
-        torque = 0.01 * np.array([np.sin(i * drone.dt), 
-                                np.cos(i * drone.dt), 
-                                0.2 * np.sin(i * drone.dt)])
-        
+        # thrust = hover_thrust + 2.0 * np.sin(i * drone.dt) + 1.0 * np.cos(i * drone.dt)
+        # torque = 0.01 * np.array([np.sin(i * drone.dt), 
+        #                         np.cos(i * drone.dt), 
+        #                         0.2 * np.sin(i * drone.dt)])
+
+        # Let's compute the low level control inputs to maintain hover
+        forceZ_cmd, torque_cmd = controller.low_level_control(
+            pos_desired=ref_xyz,
+            vel_desired=ref_lin_velocity,
+            att_desired=ref_attitude,
+            pos_current=drone.get_noisy_state()[:3],
+            vel_current=drone.get_noisy_state()[3:6],
+            att_current=drone.get_noisy_state()[6:9]
+        )
+        thrust = forceZ_cmd
+        torque = np.array(torque_cmd)
+
         drone.step(thrust, torque)
     
     print("Simulation complete!")
