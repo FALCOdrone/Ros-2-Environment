@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  drone-control:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: drone_control_ros2_humble:latest
+    container_name: drone_control_container
+    hostname: drone-control
+    privileged: true
+    network_mode: host
+    stdin_open: true
+    tty: true
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+      - GAZEBO_MODEL_PATH=/opt/ros/humble/share/gazebo_plugins/models
+    volumes:
+      - ..:/workspace
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev
+    working_dir: /workspace
+    command: bash
+
+  # Optional: Separate service for Gazebo if needed
+  gazebo:
+    image: drone_control_ros2_humble:latest
+    container_name: gazebo_container
+    hostname: gazebo-sim
+    privileged: true
+    network_mode: host
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+    volumes:
+      - ..:/workspace
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    working_dir: /workspace
+    command: gz sim -v4 worlds/drone_world.sdf
+    profiles:
+      - gazebo-only

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package format="3">
+  <name>drone_control</name>
+  <version>0.0.0</version>
+  <description>ROS2 control system for quadrotor drone</description>
+  <maintainer email="lorenzo@example.com">Lorenzo</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

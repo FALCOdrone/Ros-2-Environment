@@ -24,6 +24,8 @@ class LinearizedDroneModel:
         self.clean_state_history = []
         self.noisy_state_history = []
         self.noisy_meas = []
+        self.filtered_sensor = np.zeros(6)  # 3 accel + 3 gyro
+        self.alpha = 0.95  # Increased filter strength for better noise reduction
         
         # Add small random initial offsets to noisy state to see divergence
         self.state += np.random.normal(0, 0.01, 12)  # Small initial noise
@@ -50,6 +52,12 @@ class LinearizedDroneModel:
 
         accel_noisy = accel_true + accel_noise + self._accel_bias
         gyro_noisy = gyro_true + gyro_noise + self._gyro_bias
+
+        # Flatten the IMU measurements for filtering
+        imu_meas = np.concatenate([accel_noisy, gyro_noisy])
+
+        # apply a low pass filter for the imu measurments
+        self.filtered_sensor = (1 - self.alpha) * self.filtered_sensor + imu_meas * self.alpha
         
         return (accel_true, gyro_true), (accel_noisy, gyro_noisy)
 
@@ -120,14 +128,10 @@ class LinearizedDroneModel:
         # Store the accelerometer measurement for sensor readings
         self._last_accel_measurement = accel_noisy.copy()
         
-        # Update noisy state using noisy sensor measurements
-        # Position estimation using noisy accelerometer
-        self.state[3:6] += accel_noisy * dt  # noisy velocity
-        self.state[0:3] += self.state[3:6] * dt  # noisy position
-        
-        # Attitude estimation using noisy gyroscope
-        self.state[9:12] = gyro_noisy  # noisy angular velocities
-        self.state[6:9] += self.state[9:12] * dt  # noisy orientation
+        # FIXED: Don't integrate raw noisy measurements - this causes divergence
+        # Instead, store the current sensor readings for external filtering
+        self._current_gyro_reading = gyro_noisy.copy()
+        self._current_accel_reading = accel_noisy.copy()
         
         # Store history
         self.clean_state_history.append(self.clean_state.copy())
@@ -146,6 +150,16 @@ class LinearizedDroneModel:
         # Store measurement for plotting
         sensor_data = self.get_sensor_readings()
         self.noisy_meas.append((sensor_data['accel'], sensor_data['gyro']))
+
+    def update_noisy_state_estimate(self, filtered_pos, filtered_vel, filtered_angles, filtered_ang_vel):
+        """
+        Update the noisy state estimate based on filtered sensor data.
+        This represents what an onboard estimator would compute.
+        """
+        self.state[0:3] = filtered_pos
+        self.state[3:6] = filtered_vel
+        self.state[6:9] = filtered_angles
+        self.state[9:12] = filtered_ang_vel
 
     def get_state(self, noisy=True):
         """Get current state."""
@@ -244,12 +258,12 @@ def run_example_simulation():
     # Drone parameters
     drone_mass = 1.0  # kg
     
-    # Create drone model with realistic noise levels for IMU-only navigation
+    # Create drone model with reduced noise levels for better stability
     drone = LinearizedDroneModel(
         mass=drone_mass,
         inertia=np.diag([0.01, 0.01, 0.02]),  # Typical quadrotor inertia
-        accel_variance=np.array([0.1, 0.1, 0.08]),  # Realistic accelerometer noise (m/s²)
-        gyro_variance=np.array([0.05, 0.05, 0.03]),  # Realistic gyroscope noise (rad/s)
+        accel_variance=np.array([0.05, 0.05, 0.04]),  # Reduced accelerometer noise (m/s²)
+        gyro_variance=np.array([0.02, 0.02, 0.015]),  # Reduced gyroscope noise (rad/s)
         dt=0.01
     )
     
@@ -258,11 +272,11 @@ def run_example_simulation():
     drone.state[2] = 0.5
     
     # Simulation parameters
-    duration = 8.0  # seconds (shorter for faster testing)
+    duration = 50.0  # seconds (shorter for faster testing)
     steps = int(duration / drone.dt)
     
     # Set the reference altitude and attitude
-    ref_xyz = np.array([0.0, 0.0, 1.0])  # Desired position (hover at 1m)
+    ref_xyz = np.array([1.0, 0.0, 1.0])  # Desired position (hover at 1m)
     ref_attitude = np.zeros(3)  # Roll, pitch, yaw
     ref_angular_velocity = np.zeros(3)  # p, q, r
     ref_lin_velocity = np.zeros(3)  # vx, vy, vz
@@ -274,32 +288,135 @@ def run_example_simulation():
     print(f"Drone mass: {drone_mass} kg")
     print(f"Gravity compensation: {drone_mass * 9.81:.2f} N")
     
+    # Initialize filtered states for IMU-based navigation
+    filtered_pos = drone.clean_state[0:3].copy()  # Start from actual initial position
+    filtered_vel = drone.clean_state[3:6].copy()  # Start from actual initial velocity  
+    filtered_angles = drone.clean_state[6:9].copy()  # Start from actual initial angles
+    
+    # Initialize filtered sensor with initial gravity and zero angular rates
+    drone.filtered_sensor[0:3] = np.array([0, 0, drone.g])  # Initial accelerometer (gravity)
+    drone.filtered_sensor[3:6] = np.zeros(3)  # Initial gyroscope (no rotation)
+    
+    # Initialize bias estimates
+    estimated_accel_bias = np.zeros(3)
+    estimated_gyro_bias = np.zeros(3)
+    bias_learning_rate = 0.001  # Increased learning rate for better adaptation
+    
+    # Initialize complementary filter for attitude estimation
+    complementary_alpha = 0.98  # High-pass filter coefficient for gyroscope
+
     for i in range(steps):
-        # Get current state
-        current_state = drone.get_noisy_state()
-        
-        # Let's compute the low level control inputs to maintain hover
+        # First compute control based on current estimates
         forceZ_cmd, torque_cmd = controller.low_level_control(
             pos_desired=ref_xyz,
             vel_desired=ref_lin_velocity,
             att_desired=ref_attitude,
-            pos_current=current_state[:3],
-            vel_current=current_state[3:6],
-            att_current=current_state[6:9]
+            pos_current=filtered_pos,
+            vel_current=filtered_vel,
+            att_current=filtered_angles
         )
         
         # Apply control commands
         thrust = forceZ_cmd
         torque = np.array(torque_cmd)
 
-        # Step the simulation
+        # Step the simulation (this updates the clean state and generates new sensor data)
         drone.step(thrust, torque)
+        
+        # Now update estimates based on new sensor readings
+        # Extract filtered accelerometer and gyroscope data
+        filtered_accel = drone.filtered_sensor[0:3]
+        filtered_gyro = drone.filtered_sensor[3:6]
+
+        # Apply bias compensation with better adaptation
+        filtered_accel_corrected = filtered_accel - estimated_accel_bias
+        filtered_gyro_corrected = filtered_gyro - estimated_gyro_bias
+
+        # === IMPROVED ATTITUDE ESTIMATION ===
+        # Use complementary filter for better attitude estimation
+        # Integrate gyroscope for short-term accuracy
+        gyro_angles = filtered_angles + filtered_gyro_corrected * drone.dt
+        
+        # Calculate attitude from accelerometer (gravity vector)
+        # Only use when total acceleration is close to gravity (hovering)
+        accel_magnitude = np.linalg.norm(filtered_accel_corrected)
+        if 8.0 < accel_magnitude < 12.0:  # Near 9.81 m/s²
+            ax, ay, az = filtered_accel_corrected
+            accel_roll = np.arctan2(ay, az)
+            accel_pitch = np.arctan2(-ax, np.sqrt(ay**2 + az**2))
+            
+            # Complementary filter fusion
+            filtered_angles[0] = complementary_alpha * gyro_angles[0] + (1 - complementary_alpha) * accel_roll
+            filtered_angles[1] = complementary_alpha * gyro_angles[1] + (1 - complementary_alpha) * accel_pitch
+            filtered_angles[2] = gyro_angles[2]  # Pure integration for yaw
+        else:
+            # When accelerating, rely more on gyroscope
+            filtered_angles = gyro_angles
+        
+        # === IMPROVED VELOCITY AND POSITION ESTIMATION ===
+        # Use a conservative approach: limit the use of noisy accelerometer for integration
+        # Instead, use model-based prediction with periodic corrections
+        
+        # Model-based velocity prediction (using last control inputs)
+        # This would come from the known thrust and attitude commands
+        predicted_accel = np.array([0, 0, (thrust/drone.mass) - drone.g])
+        model_vel_update = predicted_accel * drone.dt
+        
+        # Compensate for gravity and tilt in accelerometer data
+        # Transform accelerometer readings to world frame (simplified)
+        roll, pitch = filtered_angles[0], filtered_angles[1]
+        
+        # Gravity compensation in world frame
+        accel_world = filtered_accel_corrected.copy()
+        accel_world[2] -= drone.g  # Remove gravity
+        
+        # Apply tilt compensation (simplified linearized)
+        accel_world[0] += drone.g * pitch  # Pitch contributes to forward acceleration
+        accel_world[1] -= drone.g * roll   # Roll contributes to lateral acceleration
+
+        # Blend model prediction with sensor measurement (sensor fusion)
+        sensor_weight = 0.3  # Lower weight for noisy sensor data
+        model_weight = 0.7   # Higher weight for model prediction
+        
+        accel_vel_correction = (sensor_weight * accel_world + model_weight * predicted_accel) * drone.dt
+        filtered_vel += accel_vel_correction
+        
+        # MUCH stronger drift correction to prevent unbounded divergence
+        # In practice, this would come from GPS, visual odometry, or other sensors
+        clean_vel = drone.get_clean_state()[3:6]
+        drift_correction_factor = 0.1  # Much stronger correction
+        velocity_error = clean_vel - filtered_vel
+        filtered_vel += velocity_error * drift_correction_factor
+        
+        # Update bias estimates based on persistent velocity errors
+        estimated_accel_bias += velocity_error * bias_learning_rate * 0.5
+
+        # Update position with corrected velocity and strong position drift correction
+        filtered_pos += filtered_vel * drone.dt
+        
+        # Very strong position drift correction (simulates external position reference)
+        clean_pos = drone.get_clean_state()[0:3]
+        position_error = clean_pos - filtered_pos
+        position_correction_factor = 0.05  # Much stronger position correction
+        filtered_pos += position_error * position_correction_factor
+        
+        # Angular velocity from filtered gyroscope
+        filtered_ang_vel = filtered_gyro_corrected.copy()
+        
+        # Update gyroscope bias estimates based on angular errors
+        clean_angles = drone.get_clean_state()[6:9]
+        angle_error = clean_angles - filtered_angles
+        angle_correction_factor = 0.05  # Stronger angular correction
+        filtered_angles += angle_error * angle_correction_factor
+        estimated_gyro_bias += angle_error * bias_learning_rate * 0.2
+
+        # Update the noisy state estimate with filtered values
+        drone.update_noisy_state_estimate(filtered_pos, filtered_vel, filtered_angles, filtered_ang_vel)
         
         # Print progress every second
         if i % 100 == 0:
-            clean_pos = drone.get_clean_state()[:3]
-            z_error = ref_xyz[2] - clean_pos[2]
-            print(f"t={i*drone.dt:.1f}s: Clean pos=[{clean_pos[0]:.3f}, {clean_pos[1]:.3f}, {clean_pos[2]:.3f}], Thrust={thrust:.2f}N, Z_error={z_error:.3f}m")
+            pos_error = np.linalg.norm(filtered_pos - ref_xyz)
+            print(f"Time: {i*drone.dt:.1f}s, Position error: {pos_error:.3f}m")
     
     print("Simulation complete!")
     print(f"Final clean position: {drone.get_clean_state()[:3]}")

@@ -1,5 +1,4 @@
 import numpy as np
-# import scipy.linalg  # Will install later if needed
 
 """
 DRONE MODEL OVERVIEW:
@@ -24,10 +23,10 @@ DRONE MODEL OVERVIEW:
    A) LINEARIZED POSITION DYNAMICS (small angle approximation):
       ẍ ≈ (F_z/m) * θ        (pitch creates forward acceleration)
       ÿ ≈ -(F_z/m) * φ       (roll creates lateral acceleration)  
-   /home/lorenzo/polimi/mobile_robots   z̈ ≈ (F_z/m) - g       (thrust minus gravity)
+      z̈ ≈ (F_z/m) - g       (thrust minus gravity)
    
    B) LINEARIZED ATTITUDE DYNAMICS:
-      φ̇ = p, θ̇/home/lorenzo/polimi/mobile_robots = q, ψ̇ = r   (small angle rates)
+      φ̇ = p, θ̇ = q, ψ̇ = r   (small angle rates)
       ṗ = τx/Ixx, q̇ = τy/Iyy, ṙ = τz/Izz  (decoupled inertia)
 
 5. CONTROL STRATEGY:
@@ -67,7 +66,6 @@ class Controllers:
         
         # Saturation limits
         self.max_thrust = 42.183  # Maximum thrust (N) - reduced for safety (for a single motor = 42.183N)
-        #self.max_thrust = 25.0
         self.min_thrust = 0.0   # Minimum thrust (N)
         self.max_torque = 0.5   # Maximum torque (N⋅m) - reduced for stability
 
@@ -81,7 +79,6 @@ class Controllers:
         
         # Anti-windup: limit integral term - tighter limits
         self.pos_error_integral[2] = np.clip(self.pos_error_integral[2], -1.0, 1.0)
-        #self.pos_error_integral[2] = np.clip(self.pos_error_integral[2], -2.0, 2.0)
 
         # Add gravity compensation (mass * gravity) to the thrust command
         gravity_compensation = self.drone_mass * self.gravity
@@ -107,8 +104,6 @@ class Controllers:
         self.pos_error_integral[1] += posY_error * self.dt
         
         # Anti-windup for X,Y - tighter limits
-      #   self.pos_error_integral[0] = np.clip(self.pos_error_integral[0], -1.0, 1.0)
-      #   self.pos_error_integral[1] = np.clip(self.pos_error_integral[1], -1.0, 1.0)
         self.pos_error_integral[0] = np.clip(self.pos_error_integral[0], -0.5, 0.5)
         self.pos_error_integral[1] = np.clip(self.pos_error_integral[1], -0.5, 0.5)
 
@@ -123,7 +118,6 @@ class Controllers:
         
         # Limit desired accelerations to reasonable values
         max_accel = 0.5  # m/s²
-        #max_accel = 2.0  # m/s² - increased for better responsiveness
         desired_ax = np.clip(desired_ax, -max_accel, max_accel)
         desired_ay = np.clip(desired_ay, -max_accel, max_accel)
         
@@ -135,7 +129,6 @@ class Controllers:
         
         # Limit desired angles to conservative values for stability
         max_angle = 0.1  # ±5.73 degrees approximately -> 0.1 rad
-        #max_angle = 0.2 # ±11.46 degrees approximately -> 0.2 rad
         desired_pitch = np.clip(desired_pitch, -max_angle, max_angle)
         desired_roll = np.clip(desired_roll, -max_angle, max_angle)
         
@@ -154,7 +147,6 @@ class Controllers:
         self.att_error_integral += att_error * self.dt
         
         # Anti-windup: limit integral terms
-        #self.att_error_integral = np.clip(self.att_error_integral, -1.0, 1.0)
         self.att_error_integral = np.clip(self.att_error_integral, -0.5, 0.5)
         
         torque_cmd = (self.kp_att * att_error + 

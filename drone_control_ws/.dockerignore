@@ -1,0 +1,48 @@
+# Ignore build artifacts
+build/
+install/
+log/
+
+# Ignore common temporary files
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Ignore version control
+.git/
+.gitignore
+.svn/
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore Docker files in the context (except the ones we need)
+docker-compose.override.yml
+.docker/
+
+# Ignore documentation
+*.md
+docs/
+
+# Ignore backup files
+*.bak
+*.backup
+*.orig
+
+# Ignore log files
+*.log
