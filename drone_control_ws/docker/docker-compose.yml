@@ -4,8 +4,8 @@ services:
   drone-control:
     build:
       context: ..
-      dockerfile: docker/Dockerfile
-    image: drone_control_ros2_humble:latest
+      dockerfile: docker/Dockerfile.simple
+    image: drone_control_ros2_simple:latest
     container_name: drone_control_container
     hostname: drone-control
     privileged: true
@@ -16,7 +16,9 @@ services:
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
       - ROS_DOMAIN_ID=0
-      - GAZEBO_MODEL_PATH=/opt/ros/humble/share/gazebo_plugins/models
+      - GAZEBO_MODEL_PATH=/opt/px4_source/Tools/simulation/gazebo-classic/sitl_gazebo-classic/models
+      - GAZEBO_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/gazebo-11/plugins
+      - PX4_ROOT=/opt/px4_source
     volumes:
       - ..:/workspace
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
@@ -24,7 +26,7 @@ services:
     working_dir: /workspace
     command: bash
 
-  # Optional: Separate service for Gazebo if needed
+  # Optional: Separate service for Gazebo 11 if needed
   gazebo:
     image: drone_control_ros2_humble:latest
     container_name: gazebo_container
@@ -39,6 +41,33 @@ services:
       - ..:/workspace
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
     working_dir: /workspace
-    command: gz sim -v4 worlds/drone_world.sdf
+    command: gazebo --verbose /root/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/iris.world
     profiles:
       - gazebo-only
+
+  # PX4 SITL with integrated ROS2 control
+  px4-integrated:
+    image: drone_control_ros2_humble:latest
+    container_name: px4_integrated_container
+    hostname: px4-integrated
+    privileged: true
+    network_mode: host
+    stdin_open: true
+    tty: true
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+      - PX4_ROOT=/root/PX4-Autopilot
+    volumes:
+      - ..:/workspace
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev
+    ports:
+      - "14540:14540/udp"
+      - "14557:14557/udp"
+      - "5600:5600/udp"
+    working_dir: /workspace
+    command: /start_integrated_system.sh
+    profiles:
+      - px4-full

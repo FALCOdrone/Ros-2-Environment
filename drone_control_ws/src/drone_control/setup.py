@@ -11,6 +11,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', ['launch/control_system.launch.py']),
+        ('share/' + package_name + '/launch', ['launch/px4_gazebo_iris.launch.py']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -24,6 +25,8 @@ setup(
             'drone_controller = drone_control.drone_controller:main',
             'state_estimator = drone_control.state_estimator:main',
             'trajectory_planner = drone_control.trajectory_planner:main',
+            'px4_bridge = drone_control.px4_bridge:main',
+            'mission_commander = drone_control.mission_commander:main',
         ],
     },
 )

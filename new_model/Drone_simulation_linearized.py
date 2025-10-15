@@ -380,11 +380,11 @@ def run_example_simulation():
         
         accel_vel_correction = (sensor_weight * accel_world + model_weight * predicted_accel) * drone.dt
         filtered_vel += accel_vel_correction
-        
-        # MUCH stronger drift correction to prevent unbounded divergence
+
+        # strong drift correction to prevent unbounded divergence
         # In practice, this would come from GPS, visual odometry, or other sensors
         clean_vel = drone.get_clean_state()[3:6]
-        drift_correction_factor = 0.1  # Much stronger correction
+        drift_correction_factor = 0.1  # strong correction
         velocity_error = clean_vel - filtered_vel
         filtered_vel += velocity_error * drift_correction_factor
         

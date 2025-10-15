@@ -1,0 +1,7 @@
+[console_scripts]
+drone_controller = drone_control.drone_controller:main
+mission_commander = drone_control.mission_commander:main
+px4_bridge = drone_control.px4_bridge:main
+state_estimator = drone_control.state_estimator:main
+trajectory_planner = drone_control.trajectory_planner:main
+

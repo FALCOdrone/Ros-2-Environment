@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# TODO: write this node on C++ if topic not available in PX4 MAVROS
 
 import rclpy
 from rclpy.node import Node
