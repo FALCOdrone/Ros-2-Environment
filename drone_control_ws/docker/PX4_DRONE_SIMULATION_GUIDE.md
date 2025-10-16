@@ -20,25 +20,9 @@ docker-compose up -d drone-control
 docker-compose exec drone-control bash
 ```
 
-### 2. Complete System Launch (Recommended)
+## 🔧 Manual Step-by-Step System launch
 
-**Terminal 1: Integrated Launch**
-```bash
-cd /workspace
-source /opt/ros/humble/setup.bash
-source install/setup.bash
-ros2 launch drone_control px4_gazebo_iris.launch.py use_px4:=true
-```
-
-This single command starts:
-- PX4 SITL flight controller
-- Gazebo with Iris drone model
-- MAVROS communication bridge
-- Mission commander for autonomous flight
-
-## 🔧 Manual Step-by-Step Launch
-
-If you prefer to start components individually:
+Starting components individually:
 
 ### Terminal 1: Start PX4 SITL with Gazebo
 Start PX4 SITL, which simulates the flight controller:
