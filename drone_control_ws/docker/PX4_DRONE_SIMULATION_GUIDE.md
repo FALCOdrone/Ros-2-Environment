@@ -16,7 +16,7 @@ This setup provides a complete drone simulation environment with:
 
 ```bash
 cd /path/to/Ros-2-Environment/drone_control_ws/docker
-docker-compose up -d drone-control
+docker-compose up -d drone-control # run once
 docker-compose exec drone-control bash
 ```
 
