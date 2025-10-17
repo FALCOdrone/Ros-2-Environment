@@ -29,7 +29,10 @@ Starting components individually:
 Start PX4 SITL, which simulates the flight controller:
 ```bash
 cd /opt/px4_source
-make px4_sitl gazebo
+make px4_sitl gz_x500
+
+# If you want to include the wind plugin, run the following
+make px4_sitl gz_x500_wind 
 
 # Alternative models available:
 # make px4_sitl gazebo-classic_iris_irlock    # Iris with precision landing
