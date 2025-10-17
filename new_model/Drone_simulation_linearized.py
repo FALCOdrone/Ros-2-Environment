@@ -125,14 +125,6 @@ class LinearizedDroneModel:
         
         (accel_clean, gyro_clean), (accel_noisy, gyro_noisy) = self.imu_model(true_accel, true_gyro)
         
-        # Store the accelerometer measurement for sensor readings
-        self._last_accel_measurement = accel_noisy.copy()
-        
-        # FIXED: Don't integrate raw noisy measurements - this causes divergence
-        # Instead, store the current sensor readings for external filtering
-        self._current_gyro_reading = gyro_noisy.copy()
-        self._current_accel_reading = accel_noisy.copy()
-        
         # Store history
         self.clean_state_history.append(self.clean_state.copy())
         self.noisy_state_history.append(self.state.copy())
@@ -197,9 +189,6 @@ class LinearizedDroneModel:
             
         clean_array = np.array(self.clean_state_history)
         noisy_array = np.array(self.noisy_state_history)
-        noisy_measurements = np.array(self.noisy_meas)
-        noisy_gyro = np.array([m[1] for m in noisy_measurements])
-        noisy_accel = np.array([m[0] for m in noisy_measurements])
         time = np.arange(clean_array.shape[0]) * self.dt
 
         plt.figure(figsize=(15, 12))
@@ -209,7 +198,7 @@ class LinearizedDroneModel:
         plt.plot(time, noisy_array[:, 0], 'b-', label='X Noisy', alpha=1)
         plt.plot(time, noisy_array[:, 1], 'g-', label='Y Noisy', alpha=1)
         plt.plot(time, noisy_array[:, 2], 'r-', label='Z Noisy', alpha=1)
-        plt.title('Position Comparison: Clean vs Noisy (Linearized Model)')
+        plt.title('Position (Linearized Model)')
         plt.ylabel('Position (m)')
         plt.legend()
         plt.grid(True, alpha=0.3)
@@ -219,7 +208,7 @@ class LinearizedDroneModel:
         plt.plot(time, noisy_array[:, 3], 'b-', label='Vx Noisy', alpha=1)
         plt.plot(time, noisy_array[:, 4], 'g-', label='Vy Noisy', alpha=1)
         plt.plot(time, noisy_array[:, 5], 'r-', label='Vz Noisy', alpha=1)
-        plt.title('Velocity Comparison: Clean vs Noisy (Linearized Model)')
+        plt.title('Velocity (Linearized Model)')
         plt.ylabel('Velocity (m/s)')
         plt.legend()
         plt.grid(True, alpha=0.3)
@@ -229,7 +218,7 @@ class LinearizedDroneModel:
         plt.plot(time, noisy_array[:, 6], 'b-', label='Roll Noisy', alpha=1)
         plt.plot(time, noisy_array[:, 7], 'g-', label='Pitch Noisy', alpha=1)
         plt.plot(time, noisy_array[:, 8], 'r-', label='Yaw Noisy', alpha=1)
-        plt.title('Orientation Comparison: Clean vs Noisy (Linearized Model)')
+        plt.title('Orientation (Linearized Model)')
         plt.ylabel('Angle (rad)')
         plt.legend()
         plt.grid(True, alpha=0.3)
@@ -239,7 +228,7 @@ class LinearizedDroneModel:
         plt.plot(time, noisy_array[:, 9], 'b-', label='p Noisy', alpha=1)
         plt.plot(time, noisy_array[:, 10], 'g-', label='q Noisy', alpha=1)
         plt.plot(time, noisy_array[:, 11], 'r-', label='r Noisy', alpha=1)
-        plt.title('Angular Velocity Comparison: Clean vs Noisy (Linearized Model)')
+        plt.title('Angular Velocity (Linearized Model)')
         plt.xlabel('Time (s)')
         plt.ylabel('Angular Velocity (rad/s)')
         plt.legend()
@@ -256,7 +245,7 @@ DroneModel = LinearizedDroneModel
 def run_example_simulation():
     """Example simulation demonstrating the linearized model."""
     # Drone parameters
-    drone_mass = 1.0  # kg
+    drone_mass = 4  # kg
     
     # Create drone model with reduced noise levels for better stability
     drone = LinearizedDroneModel(
@@ -344,7 +333,8 @@ def run_example_simulation():
             ax, ay, az = filtered_accel_corrected
             accel_roll = np.arctan2(ay, az)
             accel_pitch = np.arctan2(-ax, np.sqrt(ay**2 + az**2))
-            
+            #mag_yaw = np.arctan2(drone.mag_x, drone.mag_y)
+
             # Complementary filter fusion
             filtered_angles[0] = complementary_alpha * gyro_angles[0] + (1 - complementary_alpha) * accel_roll
             filtered_angles[1] = complementary_alpha * gyro_angles[1] + (1 - complementary_alpha) * accel_pitch
@@ -368,7 +358,7 @@ def run_example_simulation():
         
         # Gravity compensation in world frame
         accel_world = filtered_accel_corrected.copy()
-        accel_world[2] -= drone.g  # Remove gravity
+        #accel_world[2] -= drone.g  # Remove gravity
         
         # Apply tilt compensation (simplified linearized)
         accel_world[0] += drone.g * pitch  # Pitch contributes to forward acceleration

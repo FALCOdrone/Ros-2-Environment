@@ -1,13 +1,40 @@
 version: '3.8'
 
 services:
+  # Main service with PX4 SITL + Gazebo + ROS2 (now uses new Gazebo by default)
   drone-control:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gz
+    image: drone_control_ros2_gz:latest
+    container_name: drone_control_container
+    hostname: drone-control
+    privileged: true
+    network_mode: host
+    stdin_open: true
+    tty: true
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+      - GZ_SIM_RESOURCE_PATH=/opt/px4_source/Tools/simulation/gz/models:/opt/px4_source/Tools/simulation/gz/worlds
+      - PX4_GZ_MODELS=/opt/px4_source/Tools/simulation/gz/models
+      - PX4_ROOT=/opt/px4_source
+    volumes:
+      - ..:/workspace
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev
+    working_dir: /workspace
+    command: bash
+
+  # Legacy Gazebo Classic service (for backward compatibility)
+  drone-control-classic:
     build:
       context: ..
       dockerfile: docker/Dockerfile.simple
     image: drone_control_ros2_simple:latest
-    container_name: drone_control_container
-    hostname: drone-control
+    container_name: drone_control_classic_container
+    hostname: drone-control-classic
     privileged: true
     network_mode: host
     stdin_open: true
@@ -25,10 +52,62 @@ services:
       - /dev:/dev
     working_dir: /workspace
     command: bash
+    profiles:
+      - legacy
 
-  # Optional: Separate service for Gazebo 11 if needed
+  # PX4 SITL with Gazebo simulation only
+  gazebo-gz:
+    image: drone_control_ros2_gz:latest
+    container_name: gazebo_gz_container
+    hostname: gazebo-gz-sim
+    privileged: true
+    network_mode: host
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+      - GZ_SIM_RESOURCE_PATH=/opt/px4_source/Tools/simulation/gz/models:/opt/px4_source/Tools/simulation/gz/worlds
+      - PX4_GZ_MODELS=/opt/px4_source/Tools/simulation/gz/models
+    volumes:
+      - ..:/workspace
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    working_dir: /workspace
+    command: /usr/local/bin/launch_gz_only.sh
+    profiles:
+      - gazebo-only
+
+  # PX4 SITL with integrated ROS2 control (Gazebo version)
+  px4-integrated:
+    image: drone_control_ros2_gz:latest
+    container_name: px4_integrated_container
+    hostname: px4-integrated
+    privileged: true
+    network_mode: host
+    stdin_open: true
+    tty: true
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+      - GZ_SIM_RESOURCE_PATH=/opt/px4_source/Tools/simulation/gz/models:/opt/px4_source/Tools/simulation/gz/worlds
+      - PX4_GZ_MODELS=/opt/px4_source/Tools/simulation/gz/models
+      - PX4_ROOT=/opt/px4_source
+    volumes:
+      - ..:/workspace
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev
+    ports:
+      - "14540:14540/udp"
+      - "14557:14557/udp"
+      - "5600:5600/udp"
+    working_dir: /workspace
+    command: /usr/local/bin/start_integrated_system.sh
+    profiles:
+      - px4-full
+
+  # Legacy Gazebo Classic service (for backward compatibility)
   gazebo:
-    image: drone_control_ros2_humble:latest
+    image: drone_control_ros2_simple:latest
     container_name: gazebo_container
     hostname: gazebo-sim
     privileged: true
@@ -43,13 +122,13 @@ services:
     working_dir: /workspace
     command: gazebo --verbose /root/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/iris.world
     profiles:
-      - gazebo-only
+      - legacy
 
-  # PX4 SITL with integrated ROS2 control
-  px4-integrated:
-    image: drone_control_ros2_humble:latest
-    container_name: px4_integrated_container
-    hostname: px4-integrated
+  # Legacy PX4 SITL with integrated ROS2 control (Gazebo Classic)
+  px4-integrated-classic:
+    image: drone_control_ros2_simple:latest
+    container_name: px4_integrated_classic_container
+    hostname: px4-integrated-classic
     privileged: true
     network_mode: host
     stdin_open: true
@@ -70,4 +149,4 @@ services:
     working_dir: /workspace
     command: /start_integrated_system.sh
     profiles:
-      - px4-full
+      - legacy

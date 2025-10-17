@@ -139,13 +139,23 @@ class MissionCommander(Node):
                 
         # Mission Step 2: Takeoff
         elif self.mission_step == 2:
+            #wp = self.waypoints[waypoint_index]
+            altitude_ref = self.takeoff_altitude
+            self.current_setpoint.pose.position.x = float(0.0)
+            self.current_setpoint.pose.position.y = float(0.0)
+            self.current_setpoint.pose.position.z = float(altitude_ref)
+            pass
+            """
             self.update_setpoint_to_waypoint(0)  # Takeoff position
             if self.is_waypoint_reached(0):
                 self.get_logger().info(f"Takeoff complete at {self.takeoff_altitude}m")
                 self.mission_step = 3
+            """
                 
         # Mission Step 3: Execute waypoint mission
         elif self.mission_step == 3:
+            pass
+            """
             if self.current_waypoint < len(self.waypoints):
                 self.update_setpoint_to_waypoint(self.current_waypoint)
                 
@@ -156,12 +166,15 @@ class MissionCommander(Node):
                     if self.current_waypoint >= len(self.waypoints):
                         self.get_logger().info("Mission complete! Landing...")
                         self.mission_step = 4
-            
+            """
         # Mission Step 4: Landing
         elif self.mission_step == 4:
+            pass
+            """
             self.land_vehicle()
             self.mission_step = 5  # Mission complete
-            
+            """
+
         # Mission Step 5: Mission complete
         elif self.mission_step == 5:
             pass  # Do nothing, mission complete

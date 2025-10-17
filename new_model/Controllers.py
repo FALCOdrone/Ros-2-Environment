@@ -45,9 +45,9 @@ DRONE MODEL OVERVIEW:
 class Controllers:
     def __init__(self, drone_mass=1.0):
         # PID gains for position control - better tuned for linearized model
-        self.kp_pos = np.array([2.0, 2.0, 3.0])  # Proportional gains for x, y, z (reduced Z)
+        self.kp_pos = np.array([3.0, 2.0, 3.0])  # Proportional gains for x, y, z (reduced Z)
         self.ki_pos = np.array([1.1, 1.1, 0.05])  # Integral gains for x, y, z (reduced Z integral)
-        self.kd_pos = np.array([1.0, 1.0, 1.5])  # Derivative gains for x, y, z (reduced Z)
+        self.kd_pos = np.array([5.0, 1.0, 1.5])  # Derivative gains for x, y, z (reduced Z)
 
         # PID gains for attitude control - better tuned
         self.kp_att = np.array([5.0, 5.0, 1.5])  # Proportional gains for roll, pitch, yaw
@@ -165,3 +165,41 @@ class Controllers:
         torque_cmd = np.clip(torque_cmd, -self.max_torque, self.max_torque)
         
         return forceZ_cmd, torque_cmd
+    
+    def reset_integral_terms(self):
+        """Reset all integral terms (useful for simulation resets)."""
+        self.pos_error_integral = np.zeros(3)
+        self.att_error_integral = np.zeros(3)
+        self.prev_pos_error = np.zeros(3)
+        self.prev_att_error = np.zeros(3)
+    
+    def set_gains(self, kp_pos=None, ki_pos=None, kd_pos=None, 
+                  kp_att=None, ki_att=None, kd_att=None):
+        """Update controller gains dynamically."""
+        if kp_pos is not None:
+            self.kp_pos = np.array(kp_pos)
+        if ki_pos is not None:
+            self.ki_pos = np.array(ki_pos)
+        if kd_pos is not None:
+            self.kd_pos = np.array(kd_pos)
+        if kp_att is not None:
+            self.kp_att = np.array(kp_att)
+        if ki_att is not None:
+            self.ki_att = np.array(ki_att)
+        if kd_att is not None:
+            self.kd_att = np.array(kd_att)
+    
+    def get_control_info(self):
+        """Return current controller state for debugging."""
+        return {
+            'pos_error_integral': self.pos_error_integral.copy(),
+            'att_error_integral': self.att_error_integral.copy(),
+            'gains': {
+                'kp_pos': self.kp_pos,
+                'ki_pos': self.ki_pos,
+                'kd_pos': self.kd_pos,
+                'kp_att': self.kp_att,
+                'ki_att': self.ki_att,
+                'kd_att': self.kd_att,
+            }
+        }

@@ -10,7 +10,6 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + '/launch', ['launch/control_system.launch.py']),
         ('share/' + package_name + '/launch', ['launch/px4_gazebo_iris.launch.py']),
     ],
     install_requires=['setuptools'],

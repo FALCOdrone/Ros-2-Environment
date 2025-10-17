@@ -1,12 +1,12 @@
-# PX4 Gazebo Iris Drone Simulation Guide
+# PX4 Gazebo x500 Drone Simulation Guide
 
-Complete guide for running PX4 Iris drone simulation with Gazebo, MAVROS, and autonomous mission planning.
+Complete guide for running PX4 x500 drone simulation with Gazebo (gz), MAVROS, and autonomous mission planning.
 
 ## 🎯 Overview
 
 This setup provides a complete drone simulation environment with:
 - **PX4 SITL**: Software-in-the-loop flight controller
-- **Gazebo Classic**: 3D physics simulation with Iris quadcopter
+- **Gazebo (gz)**: Modern 3D physics simulation with x500 quadcopter
 - **MAVROS**: ROS2 ↔ PX4 communication bridge
 - **Mission Commander**: Autonomous flight control node
 
@@ -16,9 +16,45 @@ This setup provides a complete drone simulation environment with:
 
 ```bash
 cd /path/to/Ros-2-Environment/drone_control_ws/docker
-xhost + # activate the gui from x11
-docker-compose up -d drone-control # run once
+
+# Before building the container make sure that X11 server is running on the host
+xhost +
+
+# Build the compose file
+docker-compose build drone-control
+
+# Launch the container
+docker-compose up -d drone-control
 docker-compose exec drone-control bash
+```
+
+### 2. One-Command Launch
+
+Inside the container, use the integrated launch script:
+```bash
+# Launch PX4 SITL with Gazebo x500 model
+/usr/local/bin/launch_px4_gz_x500.sh
+
+# Or for full system (PX4 + Gazebo + MAVROS)
+/usr/local/bin/start_integrated_system.sh
+```
+
+### 3. Available Helper Scripts
+
+The container includes several helper scripts for different scenarios:
+
+```bash
+# Launch PX4 SITL with x500 model
+/usr/local/bin/launch_px4_gz_x500.sh
+
+# Launch only Gazebo simulation (no PX4)
+/usr/local/bin/launch_gz_only.sh
+
+# Launch only MAVROS
+/usr/local/bin/launch_mavros.sh
+
+# Launch integrated system (PX4 + Gazebo + MAVROS)
+/usr/local/bin/start_integrated_system.sh
 ```
 
 ## 🔧 Manual Step-by-Step System launch
@@ -31,13 +67,10 @@ Start PX4 SITL, which simulates the flight controller:
 cd /opt/px4_source
 make px4_sitl gz_x500
 
-# If you want to include the wind plugin, run the following
-make px4_sitl gz_x500_wind 
-
 # Alternative models available:
-# make px4_sitl gazebo-classic_iris_irlock    # Iris with precision landing
-# make px4_sitl gazebo-classic_typhoon_h480   # Typhoon hexacopter
-# make px4_sitl gazebo-classic_plane          # Fixed-wing aircraft
+# make px4_sitl gz_x500_depth     # x500 with depth camera
+# make px4_sitl gz_advanced_plane # Fixed-wing aircraft
+# make px4_sitl gz_standard_vtol  # VTOL aircraft
 ```
 
 ### Terminal 2: Start MAVROS
@@ -46,7 +79,10 @@ Start MAVROS to bridge ROS2 and PX4:
 ```bash
 cd /workspace
 source /opt/ros/humble/setup.bash
-ros2 run mavros mavros_node --ros-args -p fcu_url:="udp://:14540@127.0.0.1:14580"
+ros2 launch mavros px4.launch fcu_url:="udp://:14540@127.0.0.1:14557"
+
+# Alternative: Use the helper script
+/usr/local/bin/launch_mavros.sh
 ```
 
 ### Terminal 3: Start Mission Commander
@@ -123,6 +159,14 @@ pxh> param save
 pxh> param set SIM_WIND_V 0.0
 ```
 
+### Alternative: Gazebo Wind Plugin
+
+For more advanced wind simulation, you can also use Gazebo's built-in wind effects:
+```bash
+# In Gazebo console or through ROS2 service calls
+gz topic -t /world/default/wind -m gz.msgs.Vector3d -p "x: 5.0, y: 2.0, z: 0.0"
+```
+
 ### Wind Scenarios for Testing
 
 ```bash
@@ -147,6 +191,15 @@ The autonomous mission commander executes:
 5. **Square Pattern**: Flies a 10m x 10m square pattern
 6. **Landing**: Returns to takeoff point and lands
 7. **Disarm**: Safely disarms the vehicle
+
+### x500 Model Characteristics
+
+The x500 quadcopter offers several advantages over the previous Iris model:
+- **Modern Design**: Updated aerodynamics and sensor suite
+- **Better Stability**: Improved flight characteristics in windy conditions
+- **Enhanced Sensors**: More realistic IMU, GPS, and barometer simulation
+- **Gazebo Integration**: Native support for modern Gazebo physics
+- **Modular Design**: Easy to add cameras, lidar, and other payloads
 
 ### Mission Waypoints (Square Pattern)
 ```python
@@ -174,8 +227,8 @@ source install/setup.bash
 
 **2. MAVROS not connecting:**
 - Check PX4 is running: Look for `pxh>` prompt
-- Verify MAVLink ports: Should see "udp port 14580 remote port 14540"
-- Check MAVROS URL: `fcu_url:="udp://:14540@127.0.0.1:14580"`
+- Verify MAVLink ports: Should see "udp port 14557 remote port 14540"
+- Check MAVROS URL: `fcu_url:="udp://:14540@127.0.0.1:14557"`
 
 **3. Gazebo GUI not showing:**
 ```bash
@@ -185,6 +238,9 @@ export DISPLAY=:0
 
 # In container:
 export DISPLAY=:0
+
+# For Gazebo (gz) specific issues:
+export GZ_SIM_RESOURCE_PATH=/opt/px4_source/Tools/simulation/gz/models:/opt/px4_source/Tools/simulation/gz/worlds
 ```
 
 **4. Mission commander stuck on "Waiting for FCU connection":**
@@ -199,6 +255,15 @@ export DISPLAY=:0
 # In PX4 console (pxh>):
 pxh> commander status
 pxh> mavlink status
+```
+
+**Check Gazebo Status:**
+```bash
+# List Gazebo topics
+gz topic -l
+
+# Check if x500 model is loaded
+gz model -l
 ```
 
 **Check MAVROS Connection:**
@@ -237,6 +302,9 @@ ros2 topic echo /mavros/actuator_outputs
 
 # System diagnostics
 ros2 topic echo /mavros/diagnostics
+
+# Gazebo-specific monitoring
+gz topic -e -t /world/default/pose/info
 ```
 
 ## 🎯 Next Steps
@@ -246,18 +314,20 @@ ros2 topic echo /mavros/diagnostics
 3. **Custom Controllers**: Implement your own control algorithms
 4. **Wind Testing**: Use wind parameters to test robustness
 5. **Formation Flight**: Launch multiple drones with different namespaces
+6. **Advanced Models**: Try x500_depth for computer vision applications
 
 ## 📚 Additional Resources
 
 - **PX4 Documentation**: https://docs.px4.io/
+- **PX4 Gazebo Integration**: https://docs.px4.io/main/en/sim_gazebo_gz/
 - **MAVROS Documentation**: https://github.com/mavlink/mavros
-- **Gazebo Documentation**: http://gazebosim.org/
+- **Gazebo Documentation**: https://gazebosim.org/
 - **ROS2 Documentation**: https://docs.ros.org/en/humble/
 
 ---
 
 **Success Indicators:**
-- ✅ Gazebo shows Iris drone in 3D environment
+- ✅ Gazebo shows x500 drone in 3D environment
 - ✅ PX4 console shows `pxh>` prompt  
 - ✅ MAVROS reports "FCU connection successful"
 - ✅ Mission commander reports "OFFBOARD mode enabled"
