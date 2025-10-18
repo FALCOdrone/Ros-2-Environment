@@ -98,6 +98,26 @@ source install/setup.bash
 ./install/drone_control/bin/mission_commander
 ```
 
+## Launching a custom control system without px4 and mavros
+You can also launch Gazebo with the x500 model alone to test your own control algorithms:
+
+```bash
+cd /workspace
+
+# (optional) run the setup script if you want to use ROS2 packages
+source /opt/ros/humble/setup.bash
+
+# Build the workspace first
+cd /workspace
+colcon build
+source install/setup.bash
+
+cd /workspace/docker
+./launch_gazebo_x500_auto.sh
+```
+Therefore, from ros nodes you can publish thrust commands directly to the motor topics, implement your own flight controller as ROS 2 nodes. You can use `/gz/msgs/Double` for motor commands that needs to be sent to gazebo.
+In addition, if you want to add wind disturbances to the simulation, you can set forces and torques in real-time while using gazebo and while the drone is flying. You will see three dots in the top right corner of the gazebo window, then you will find forces and torques options to set the wind disturbances.
+
 ## 🎮 Mission Control Commands
 
 ### View Available ROS2 Topics
@@ -159,26 +179,6 @@ pxh> param save
 pxh> param set SIM_WIND_V 0.0
 ```
 
-### Alternative: Gazebo Wind Plugin
-
-For more advanced wind simulation, you can also use Gazebo's built-in wind effects:
-```bash
-# In Gazebo console or through ROS2 service calls
-gz topic -t /world/default/wind -m gz.msgs.Vector3d -p "x: 5.0, y: 2.0, z: 0.0"
-```
-
-### Wind Scenarios for Testing
-
-```bash
-# Gentle breeze from west
-pxh> param set SIM_WIND_V 3.0 && param set SIM_WIND_D 270 && param set SIM_WIND_T 0.5
-
-# Strong crosswind from south
-pxh> param set SIM_WIND_V 8.0 && param set SIM_WIND_D 180 && param set SIM_WIND_T 1.5
-
-# Gusty conditions
-pxh> param set SIM_WIND_V 6.0 && param set SIM_WIND_D 45 && param set SIM_WIND_T 3.0
-```
 
 ## 🏁 Mission Commander Behavior
 
