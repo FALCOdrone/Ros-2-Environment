@@ -102,6 +102,7 @@ source install/setup.bash
 You can also launch Gazebo with the x500 model alone to test your own control algorithms:
 
 ```bash
+# After executing the container, run the following commands
 cd /workspace
 
 # (optional) run the setup script if you want to use ROS2 packages
