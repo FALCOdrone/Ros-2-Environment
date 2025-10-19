@@ -1,207 +1,336 @@
-# FALCO Drone ROS 2 Environment
+# PX4 Gazebo x500 Drone Simulation Guide
 
-A comprehensive ROS 2 simulation environment for the FALCO drone using Gazebo 11, featuring advanced PID control systems and high-level position control capabilities.
+Complete guide for running PX4 x500 drone simulation with Gazebo (gz), MAVROS, and autonomous mission planning.
 
-## Table of Contents
+## 🎯 Overview
 
-- [Introduction](#introduction)
-- [Prerequisites](#prerequisites)
-- [Setup](#setup)
-- [Usage](#usage)
-- [Control System Details](#control-system-details)
-- [Real Time System](#real-time-system)
-- [Configuration](#configuration)
-- [Troubleshooting](#troubleshooting)
-- [Additional Information](#additional-information)
+This setup provides a complete drone simulation environment with:
+- **PX4 SITL**: Software-in-the-loop flight controller
+- **Gazebo (gz)**: Modern 3D physics simulation with x500 quadcopter
+- **MAVROS**: ROS2 ↔ PX4 communication bridge
+- **Mission Commander**: Autonomous flight control node
 
-## Introduction
+## 🚀 Quick Start
 
-This repository provides a complete simulation environment for the FALCO drone built on ROS 2 Humble and Gazebo 11. The simulation includes:
-
-- Realistic drone physics and dynamics
-- PID-based flight control system
-- High-level position control interface
-- Sensor simulation with noise modeling
-- Safety mechanisms for autonomous operation
-
-![FALCO Drone Overview](ros2_env/ros2_ws/src/falco_drone/imgs/overview.png)
-
-### System Architecture
-
-The system uses a well-defined transform tree for accurate positioning and control:
-
-![TF Tree](ros2_env/ros2_ws/src/falco_drone/imgs/tf_tree.png)
-
-## Prerequisites
-
-Before running the simulation, ensure you have:
-
-- Docker installed on your system
-- Basic knowledge of ROS 2 and Gazebo
-- Terminal access with bash support
-
-## Setup
-
-### 1. Build the Docker Environment
-
-First, build the updated Docker image with all required packages:
+### 1. Start the Docker Container
 
 ```bash
-cd Ros-2-Environment/ros2_env/
-./build.sh
+cd /path/to/Ros-2-Environment/drone_control_ws/docker
+
+# Before building the container make sure that X11 server is running on the host
+xhost +
+
+# Build the compose file
+docker-compose build drone-control
+
+# Launch the container
+docker-compose up -d drone-control
+docker-compose exec drone-control bash
 ```
 
-### 2. Run the Docker Container
+### 2. One-Command Launch
 
-After building, start the Docker container:
-
+Inside the container, use the integrated launch script:
 ```bash
-cd Ros-2-Environment/ros2_env/docker/
-./start_integrated.sh
+# Launch PX4 SITL with Gazebo x500 model
+/usr/local/bin/launch_px4_gz_x500.sh
+
+# Or for full system (PX4 + Gazebo + MAVROS)
+/usr/local/bin/start_integrated_system.sh
 ```
 
-### 3. Install tmux (Optional but Recommended)
+### 3. Available Helper Scripts
 
-> **Note:** tmux needs to be installed each time you run the container due to the current Dockerfile configuration.
+The container includes several helper scripts for different scenarios:
 
 ```bash
-cd ros2_ws/
-sudo apt-get update
-sudo apt install tmux
+# Launch PX4 SITL with x500 model
+/usr/local/bin/launch_px4_gz_x500.sh
+
+# Launch only Gazebo simulation (no PX4)
+/usr/local/bin/launch_gz_only.sh
+
+# Launch only MAVROS
+/usr/local/bin/launch_mavros.sh
+
+# Launch integrated system (PX4 + Gazebo + MAVROS)
+/usr/local/bin/start_integrated_system.sh
 ```
 
-## Usage
+## 🔧 Manual Step-by-Step System launch
 
-### 1. Build and Launch the Simulation
+Starting components individually:
 
-In a new tmux session, build the workspace and launch the simulation:
-
+### Terminal 1: Start PX4 SITL with Gazebo
+Start PX4 SITL, which simulates the flight controller:
 ```bash
-# Build the ROS 2 workspace
+cd /opt/px4_source
+make px4_sitl gz_x500
+
+# Alternative models available:
+# make px4_sitl gz_x500_depth     # x500 with depth camera
+# make px4_sitl gz_advanced_plane # Fixed-wing aircraft
+# make px4_sitl gz_standard_vtol  # VTOL aircraft
+```
+
+### Terminal 2: Start MAVROS
+
+Start MAVROS to bridge ROS2 and PX4:
+```bash
+cd /workspace
+source /opt/ros/humble/setup.bash
+ros2 launch mavros px4.launch fcu_url:="udp://:14540@127.0.0.1:14557"
+
+# Alternative: Use the helper script
+/usr/local/bin/launch_mavros.sh
+```
+
+### Terminal 3: Start Mission Commander
+```bash
+cd /workspace
+source /opt/ros/humble/setup.bash
+
+# Build the workspace
 colcon build
-
-# Source the environment (execute inside ros2_ws folder)
 source install/setup.bash
 
-# Launch the drone simulation with Gazebo
-ros2 launch falco_drone_bringup falco_drone_bringup
+# Run the mission commander through the executable
+./install/drone_control/bin/mission_commander
 ```
 
-### 2. Run Position Control
-
-In a new tmux session, start the position control node:
+## Launching a custom control system and/or SLAM package without px4 and mavros
+You can also launch Gazebo with the x500 model alone to test your own control algorithms:
 
 ```bash
-# Source the environment
+cd /workspace
+
+# (optional) run the setup script if you want to use ROS2 packages
+source /opt/ros/humble/setup.bash
+
+# Build the workspace first
+cd /workspace
+colcon build
 source install/setup.bash
 
-# Run the position control node
-ros2 run falco_drone_control drone_position_control
+cd /workspace/docker
+./launch_gazebo_x500_auto.sh
 ```
+Therefore, from ros nodes you can publish thrust commands directly to the motor topics, implement your own flight controller as ROS 2 nodes. You can use `/gz/msgs/Double` for motor commands that needs to be sent to gazebo.
+In addition, if you want to add wind disturbances to the simulation, you can set forces and torques in real-time while using gazebo and while the drone is flying. You will see three dots in the top right corner of the gazebo window, then you will find forces and torques options to set the wind disturbances.
 
-The `drone_position_control` node enables closed-loop pose and velocity control for reaching target positions through the `self.move_drone_to_pose(...)` method.
+## 🎮 Mission Control Commands
 
-### 3. Publish the button topic
-Publish an integer message for letting the drone to take off
+### View Available ROS2 Topics
 ```bash
-ros2 topic pub /start_button std_msgs/msg/Int8 "data: 1"
+ros2 topic list
 ```
 
-## Control System Details
+**Key Topics:**
+- `/mavros/state` - Vehicle connection and mode status
+- `/mavros/local_position/pose` - Current drone position
+- `/mavros/setpoint_position/local` - Target position commands
+- `/mavros/cmd/arming` - Arm/disarm commands
 
-The FALCO drone uses a sophisticated control system implemented through Gazebo plugins. The main control components are located in `ros2_env/ros2_ws/src/falco_drone/falco_drone_description/`.
+### Monitor Drone Status
+```bash
+# Watch connection status
+ros2 topic echo /mavros/state
 
-![ROS Graph](ros2_env/ros2_ws/src/falco_drone/imgs/rosgraph.png)
+# Monitor drone position
+ros2 topic echo /mavros/local_position/pose
 
-### PID Control Plugin (`plugin_drone_private.cpp`)
+# View mission commands being sent
+ros2 topic echo /mavros/setpoint_position/local
+```
 
-The core control system handles:
+### Manual Control Commands
+```bash
+# Arm the drone
+ros2 service call /mavros/cmd/arming mavros_msgs/srv/CommandBool "{value: true}"
 
-- **Parameter Loading**: Reads PID parameters from the SDF file
-- **Sensor Callbacks**: Processes sensor data, cmd_vel, and pose data with noise modeling
-- **State Management**: Handles takeoff, landing, and flight state operations
-- **Odometry Publishing**: Publishes drone state as `nav_msgs/Odometry` messages in the `base_footprint` frame
-- **TF Publishing**: Maintains the transform tree for visualization in Gazebo
-- **State Updates**: Manages drone state transitions (flying, landing, taking off)
-- **Dynamics Updates**: Applies PID control outputs to drone motors for desired flight behavior
+# Change flight mode to OFFBOARD
+ros2 service call /mavros/set_mode mavros_msgs/srv/SetMode "{custom_mode: 'OFFBOARD'}"
 
-### High-Level Control (`drone_position_control.py`)
+# Emergency land
+ros2 service call /mavros/cmd/land mavros_msgs/srv/CommandTOL "{}"
+```
 
-The position control node provides:
+## 🌪️ Adding Wind Disturbances
 
-- High-level position control interface
-- Target position management
-- **Safety Features**: Automatic landing mechanism when close to target altitude
-- Landing timer (`self.landing_timer`) for safe altitude proximity operations
+### Real-time Wind Injection via PX4 Console
 
-> **Safety Note:** The landing timer triggers automatically when the drone's vertical distance to the ground is close to the target altitude.
+In the PX4 terminal (pxh> prompt):
 
-## Real Time System
-Currently not implemented yet, but the idea is to integrate ros topics feedbacks to the **Teensy 4.1** serial port.
+```bash
+# Add 5 m/s wind from the east with turbulence
+pxh> param set SIM_WIND_V 5.0      # Wind speed (m/s)
+pxh> param set SIM_WIND_D 90       # Wind direction (degrees: 0=N, 90=E, 180=S, 270=W)
+pxh> param set SIM_WIND_T 2.0      # Turbulence intensity (0-10)
 
-## Configuration
+# Verify parameters
+pxh> param show SIM_WIND_V
+pxh> param show SIM_WIND_D
+pxh> param show SIM_WIND_T
 
-### Modifying Drone Parameters
+# Save parameters (optional)
+pxh> param save
 
-To customize drone parameters (mass, inertia, etc.):
+# Remove wind
+pxh> param set SIM_WIND_V 0.0
+```
 
-1. **Edit the XACRO file**:
-   ```bash
-   # Navigate to the URDF directory
-   cd ros2_env/ros2_ws/src/falco_drone/falco_drone_description/urdf/
-   
-   # Edit the drone parameters
-   nano falco_drone.urdf.xacro
-   ```
 
-2. **Generate updated URDF**:
-   ```bash
-   # Generate new URDF file
-   ros2 run xacro xacro falco_drone.urdf.xacro > falco_drone.urdf
-   ```
+## 🏁 Mission Commander Behavior
 
-3. **Generate updated SDF**:
-   ```bash
-   # Navigate to the models directory
-   cd ../models/falco_drone/
-   
-   # Generate new SDF file
-   gz sdf -p ../../urdf/falco_drone.urdf > falco_drone.sdf
-   ```
+The autonomous mission commander executes:
 
-> **Important:** Both URDF and SDF files must be regenerated after modifying the XACRO file to ensure changes take effect.
+1. **Connection Phase**: Waits for MAVROS connection to PX4
+2. **Mode Setting**: Switches PX4 to OFFBOARD mode
+3. **Arming**: Arms the vehicle for flight
+4. **Takeoff**: Climbs to 3.0m altitude
+5. **Square Pattern**: Flies a 10m x 10m square pattern
+6. **Landing**: Returns to takeoff point and lands
+7. **Disarm**: Safely disarms the vehicle
 
-## Troubleshooting
+### x500 Model Characteristics
+
+The x500 quadcopter offers several advantages over the previous Iris model:
+- **Modern Design**: Updated aerodynamics and sensor suite
+- **Better Stability**: Improved flight characteristics in windy conditions
+- **Enhanced Sensors**: More realistic IMU, GPS, and barometer simulation
+- **Gazebo Integration**: Native support for modern Gazebo physics
+- **Modular Design**: Easy to add cameras, lidar, and other payloads
+
+### Mission Waypoints (Square Pattern)
+```python
+# Default waypoints (can be modified in mission_commander.py)
+waypoints = [
+    [0.0, 0.0, 3.0],    # Takeoff position
+    [10.0, 0.0, 3.0],   # Point 1
+    [10.0, 10.0, 3.0],  # Point 2  
+    [0.0, 10.0, 3.0],   # Point 3
+    [0.0, 0.0, 3.0],    # Return to start
+    [0.0, 0.0, 0.5]     # Landing position
+]
+```
+
+## 🔧 Troubleshooting
 
 ### Common Issues
 
-1. **Container Access Issues**: Ensure Docker is properly installed and running
-2. **Build Failures**: Check that all dependencies are correctly installed in the Docker image
-3. **Gazebo Models Missing**: The simulation requires Gazebo models to be downloaded (see package-specific README)
-4. **tmux Not Available**: Remember to install tmux each time you start a new container
-
-### Getting Gazebo Models
-
-If you encounter missing Gazebo models, install them with:
-
+**1. "No executable found" error:**
 ```bash
-curl -L https://github.com/osrf/gazebo_models/archive/refs/heads/master.zip -o /tmp/gazebo_models.zip \
-    && unzip /tmp/gazebo_models.zip -d /tmp && mkdir -p ~/.gazebo/models/ && mv /tmp/gazebo_models-master/* ~/.gazebo/models/ \
-    && rm -r /tmp/gazebo_models.zip
+cd /workspace
+colcon build --packages-select drone_control
+source install/setup.bash
 ```
 
-## Additional Information
+**2. MAVROS not connecting:**
+- Check PX4 is running: Look for `pxh>` prompt
+- Verify MAVLink ports: Should see "udp port 14557 remote port 14540"
+- Check MAVROS URL: `fcu_url:="udp://:14540@127.0.0.1:14557"`
 
-### Package Structure
+**3. Gazebo GUI not showing:**
+```bash
+# On host machine:
+xhost +local:docker
+export DISPLAY=:0
 
-- **falco_drone_description**: Contains drone models, plugins, and world files
-- **falco_drone_bringup**: Launch files and configuration
-- **falco_drone_control**: Control nodes and algorithms
+# In container:
+export DISPLAY=:0
 
-### Development Notes
+# For Gazebo (gz) specific issues:
+export GZ_SIM_RESOURCE_PATH=/opt/px4_source/Tools/simulation/gz/models:/opt/px4_source/Tools/simulation/gz/worlds
+```
 
-- The current Dockerfile setup requires tmux to be installed manually each session
-- Consider adding tmux to the Dockerfile for persistent installation
-- All paths in this documentation use relative references from the repository root
+**4. Mission commander stuck on "Waiting for FCU connection":**
+- Ensure PX4 SITL is running first
+- Start MAVROS and wait for "FCU connection successful"
+- Then start mission commander
 
-For more detailed information about specific packages, refer to their individual README files in the respective package directories.
+### Verify System Status
+
+**Check PX4 Status:**
+```bash
+# In PX4 console (pxh>):
+pxh> commander status
+pxh> mavlink status
+```
+
+**Check Gazebo Status:**
+```bash
+# List Gazebo topics
+gz topic -l
+
+# Check if x500 model is loaded
+gz model -l
+```
+
+**Check MAVROS Connection:**
+```bash
+ros2 topic echo /mavros/state --once
+# Should show: connected: true
+```
+
+**List Active Nodes:**
+```bash
+ros2 node list
+# Should include: /mavros, /mission_commander
+```
+
+## 📊 Performance Monitoring
+
+### Flight Data Logging
+
+PX4 automatically logs flight data:
+```bash
+# View log files
+ls /opt/px4_source/log/$(date +%Y-%m-%d)/
+
+# Analyze logs (if ulog tools installed)
+ulog_info /opt/px4_source/log/$(date +%Y-%m-%d)/*.ulg
+```
+
+### Real-time Monitoring
+
+```bash
+# Position accuracy
+ros2 topic echo /mavros/local_position/pose
+
+# Control effort  
+ros2 topic echo /mavros/actuator_outputs
+
+# System diagnostics
+ros2 topic echo /mavros/diagnostics
+
+# Gazebo-specific monitoring
+gz topic -e -t /world/default/pose/info
+```
+
+## 🎯 Next Steps
+
+1. **Modify Mission**: Edit `/workspace/src/drone_control/drone_control/mission_commander.py`
+2. **Add Sensors**: Extend the simulation with camera, lidar, etc.
+3. **Custom Controllers**: Implement your own control algorithms
+4. **Wind Testing**: Use wind parameters to test robustness
+5. **Formation Flight**: Launch multiple drones with different namespaces
+6. **Advanced Models**: Try x500_depth for computer vision applications
+
+## 📚 Additional Resources
+
+- **PX4 Documentation**: https://docs.px4.io/
+- **PX4 Gazebo Integration**: https://docs.px4.io/main/en/sim_gazebo_gz/
+- **MAVROS Documentation**: https://github.com/mavlink/mavros
+- **Gazebo Documentation**: https://gazebosim.org/
+- **ROS2 Documentation**: https://docs.ros.org/en/humble/
+
+---
+
+**Success Indicators:**
+- ✅ Gazebo shows x500 drone in 3D environment
+- ✅ PX4 console shows `pxh>` prompt  
+- ✅ MAVROS reports "FCU connection successful"
+- ✅ Mission commander reports "OFFBOARD mode enabled"
+- ✅ Drone autonomously takes off, flies pattern, and lands
+
+Happy flying! 🚁
