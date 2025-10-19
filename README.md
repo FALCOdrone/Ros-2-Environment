@@ -1,4 +1,4 @@
-# PX4 Gazebo x500 Drone Simulation Guide
+# Drone Simulation Guide
 
 Complete guide for running PX4 x500 drone simulation with Gazebo (gz), MAVROS, and autonomous mission planning.
 
