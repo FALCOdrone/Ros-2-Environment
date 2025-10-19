@@ -117,6 +117,7 @@ cd /workspace/docker
 ```
 Therefore, from ros nodes you can publish thrust commands directly to the motor topics, implement your own flight controller as ROS 2 nodes. You can use `/gz/msgs/Double` for motor commands that needs to be sent to gazebo.
 In addition, if you want to add wind disturbances to the simulation, you can set forces and torques in real-time while using gazebo and while the drone is flying. You will see three dots in the top right corner of the gazebo window, then you will find forces and torques options to set the wind disturbances.
+We'll need to develop vision SLAM algorithms, for this reason, this environment will be usefull for testing our custom created packages separately from px4. In other words, with this setting everything is living inside ros2 framework and nothing will depend from px4.
 
 ## 🎮 Mission Control Commands
 
