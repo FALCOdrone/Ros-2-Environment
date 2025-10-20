@@ -35,6 +35,12 @@ Inside the container, use the integrated launch script:
 # Launch PX4 SITL with Gazebo x500 model
 /usr/local/bin/launch_px4_gz_x500.sh
 
+# Source and build ros2 environment
+cd workspace/
+source /opt/ros/humble/setup.bash
+colcon build
+source install/setup.bash
+
 # Or for full system (PX4 + Gazebo + MAVROS)
 /usr/local/bin/start_integrated_system.sh
 ```
