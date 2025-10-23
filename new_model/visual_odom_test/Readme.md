@@ -2,7 +2,7 @@
 
 To obtain the MidAir dataset, please follow these steps:
 1. Visit the official MidAir dataset website: https://midair.ulg.ac.be/download.html
-2. Follow the provided instructions to download the dataset. This may involve filling out a form or agreeing to terms of use.
+2. Follow the provided instructions to download the dataset.
 3. Once downloaded, extract the dataset to a desired location on your local machine.
 4. Update the `base_lorenzo_dir` variable in `VIO_main.py` to point to the location where you extracted the MidAir dataset.
 
