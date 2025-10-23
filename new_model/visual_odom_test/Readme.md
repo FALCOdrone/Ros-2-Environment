@@ -1,4 +1,4 @@
-### INSTRUCTION FOR GETTING THE MIDAIR DATASET ###
+## INSTRUCTION FOR GETTING THE MIDAIR DATASET ###
 
 To obtain the MidAir dataset, please follow these steps:
 1. Visit the official MidAir dataset website: https://midair.ulg.ac.be/download.html
@@ -6,7 +6,7 @@ To obtain the MidAir dataset, please follow these steps:
 3. Once downloaded, extract the dataset to a desired location on your local machine.
 4. Update the `base_lorenzo_dir` variable in `VIO_main.py` to point to the location where you extracted the MidAir dataset.
 
-## Suggestions for running the Odometry Code
+### Running the Odometry Code
 Run the `VIO_main.py` after creating a Python virtual environment with the required dependencies installed.
 
 The first step is to create the virtual envirnoment. You can do this by running the following commands in your terminal:
