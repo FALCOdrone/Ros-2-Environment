@@ -55,7 +55,7 @@ def get_camera_data(base_dir):
 
 
 # change the path to your dataset directory
-base_lorenzo_dir = "/home/lorenzo/Ros-2-Environment/new_model/visual_odom_test/MidAir/MidAir/Kite_training"
+base_lorenzo_dir = "/home/lorenzo/Ros-2-Environment/visual_odom_test/MidAir/MidAir/Kite_training"
 get_camera_data(base_lorenzo_dir)
 
 
