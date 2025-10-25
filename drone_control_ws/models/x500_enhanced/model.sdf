@@ -1,0 +1,256 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="x500_enhanced">
+    <!-- Include the base x500 model with IMU and pressure sensors -->
+    <include>
+      <uri>x500</uri>
+      <name>x500</name>
+    </include>
+
+    <!-- GPS Link -->
+    <!-- GPS Link - positioned on top of the drone -->
+    <link name="gps_link">
+      <pose>0 0 0.2 0 0 0</pose>
+      <inertial>
+        <mass>0.015</mass>
+        <inertia>
+          <ixx>0.000001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000001</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001</izz>
+        </inertia>
+      </inertial>
+      
+      <!-- GPS visual -->
+      <visual name="gps_visual">
+        <geometry>
+          <box>
+            <size>0.025 0.025 0.008</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.1 0.1 0.1 1</ambient>
+          <diffuse>0.2 0.2 0.2 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+      
+      <!-- GPS Sensor -->
+      <sensor name="gps_sensor" type="navsat">
+        <always_on>1</always_on>
+        <update_rate>10</update_rate>
+        <navsat>
+          <position_sensing>
+            <horizontal>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>1e-2</stddev>
+              </noise>
+            </horizontal>
+            <vertical>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>1e-2</stddev>
+              </noise>
+            </vertical>
+          </position_sensing>
+          <velocity_sensing>
+            <horizontal>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>1e-3</stddev>
+              </noise>
+            </horizontal>
+            <vertical>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>1e-3</stddev>
+              </noise>
+            </vertical>
+          </velocity_sensing>
+        </navsat>
+        <plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat">
+        </plugin>
+      </sensor>
+    </link>
+
+    <!-- Left Camera Link -->
+    <link name="camera_left_link">
+      <pose>0.07 -0.025 0.27 0 0 0</pose>
+      <inertial>
+        <mass>0.045</mass>
+        <inertia>
+          <ixx>0.000001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000001</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001</izz>
+        </inertia>
+      </inertial>
+      
+      <!-- Left camera housing visual -->
+      <visual name="left_camera_housing">
+        <geometry>
+          <box>
+            <size>0.025 0.025 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.05 0.05 0.05 1</ambient>
+          <diffuse>0.1 0.1 0.1 1</diffuse>
+          <specular>0.3 0.3 0.3 1</specular>
+        </material>
+      </visual>
+      
+      <!-- Left camera lens visual -->
+      <visual name="left_lens">
+        <pose>0.013 0 0 0 1.5708 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.005</radius>
+            <length>0.002</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.0 0.0 0.0 1</ambient>
+          <diffuse>0.1 0.1 0.1 1</diffuse>
+        </material>
+      </visual>
+      
+      <!-- Left Camera Sensor -->
+      <sensor name="camera_left" type="camera">
+        <pose>0.015 0 0 0 0 0</pose>
+        <always_on>1</always_on>
+        <update_rate>30</update_rate>
+        <camera>
+          <horizontal_fov>1.2</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.05</near>
+            <far>300</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+          <distortion>
+            <k1>-0.2</k1>
+            <k2>0.1</k2>
+            <k3>0.0</k3>
+            <p1>0.0</p1>
+            <p2>0.0</p2>
+            <center>0.5 0.5</center>
+          </distortion>
+        </camera>
+        <plugin filename="gz-sim-camera-system" name="gz::sim::systems::Camera">
+        </plugin>
+      </sensor>
+    </link>
+
+    <!-- Right Camera Link -->
+    <link name="camera_right_link">
+      <pose>0.07 0.025 0.27 0 0 0</pose>
+      <inertial>
+        <mass>0.045</mass>
+        <inertia>
+          <ixx>0.000001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000001</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001</izz>
+        </inertia>
+      </inertial>
+      
+      <!-- Right camera housing visual -->
+      <visual name="right_camera_housing">
+        <geometry>
+          <box>
+            <size>0.025 0.025 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.05 0.05 0.05 1</ambient>
+          <diffuse>0.1 0.1 0.1 1</diffuse>
+          <specular>0.3 0.3 0.3 1</specular>
+        </material>
+      </visual>
+      
+      <!-- Right camera lens visual -->
+      <visual name="right_lens">
+        <pose>0.013 0 0 0 1.5708 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.005</radius>
+            <length>0.002</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.0 0.0 0.0 1</ambient>
+          <diffuse>0.1 0.1 0.1 1</diffuse>
+        </material>
+      </visual>
+      
+      <!-- Right Camera Sensor -->
+      <sensor name="camera_right" type="camera">
+        <pose>0.015 0 0 0 0 0</pose>
+        <always_on>1</always_on>
+        <update_rate>30</update_rate>
+        <camera>
+          <horizontal_fov>1.2</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.05</near>
+            <far>300</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+          <distortion>
+            <k1>-0.2</k1>
+            <k2>0.1</k2>
+            <k3>0.0</k3>
+            <p1>0.0</p1>
+            <p2>0.0</p2>
+            <center>0.5 0.5</center>
+          </distortion>
+        </camera>
+        <plugin filename="gz-sim-camera-system" name="gz::sim::systems::Camera">
+        </plugin>
+      </sensor>
+    </link>
+
+    <!-- Joint to attach GPS to base_link -->
+    <joint name="gps_joint" type="fixed">
+      <parent>x500::base_link</parent>
+      <child>gps_link</child>
+    </joint>
+
+    <!-- Joint to attach left camera to base_link -->
+    <joint name="camera_left_joint" type="fixed">
+      <parent>x500::base_link</parent>
+      <child>camera_left_link</child>
+    </joint>
+
+    <!-- Joint to attach right camera to base_link -->
+    <joint name="camera_right_joint" type="fixed">
+      <parent>x500::base_link</parent>
+      <child>camera_right_link</child>
+    </joint>
+
+  </model>
+</sdf>

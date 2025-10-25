@@ -120,6 +120,9 @@ RUN echo '#!/bin/bash' > /usr/local/bin/launch_gz_only.sh \
     && echo 'gz sim -v 4 -r /opt/px4_source/Tools/simulation/gz/worlds/default.sdf' >> /usr/local/bin/launch_gz_only.sh \
     && chmod +x /usr/local/bin/launch_gz_only.sh
 
+# Installing the ROS2 gazebo garden bridge 
+#RUN apt install ros-humble-ros-gzharmonic  
+
 # Create integrated launch script (PX4 SITL + Gazebo + MAVROS)
 RUN echo '#!/bin/bash' > /usr/local/bin/start_integrated_system.sh \
     && echo 'set -e' >> /usr/local/bin/start_integrated_system.sh \
