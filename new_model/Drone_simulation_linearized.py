@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib
+matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 import Controllers
 
@@ -60,19 +62,89 @@ class LinearizedDroneModel:
         self.filtered_sensor = (1 - self.alpha) * self.filtered_sensor + imu_meas * self.alpha
         
         return (accel_true, gyro_true), (accel_noisy, gyro_noisy)
-
-    def linearized_dynamics(self, thrust, torque, dt=None):
+    
+    def compute_derivatives(self, state, thrust, torque):
         """
-        Linearized drone dynamics around hover condition.
+        Compute the time derivatives of the linearized system to use them for Runge_Kutta integration
+        given the current state, thrust, and torque.
+        """
+        x, y, z = state[0:3]
+        vx, vy, vz = state[3:6]
+        roll, pitch, yaw = state[6:9]
+        p, q, r = state[9:12]
+
+        ax = (thrust / self.mass) * pitch
+        ay = -(thrust / self.mass) * roll
+        az = (thrust / self.mass) - self.g
+
+        Ixx, Iyy, Izz = self.inertia[0,0], self.inertia[1,1], self.inertia[2,2]
+        p_dot = torque[0] / Ixx
+        q_dot = torque[1] / Iyy
+        r_dot = torque[2] / Izz
+
+        # Costruisci il vettore delle derivate
+        state_dot = np.zeros(12)
+        state_dot[0:3] = [vx, vy, vz]        # posizione
+        state_dot[3:6] = [ax, ay, az]        # velocità
+        state_dot[6:9] = [p, q, r]           # angoli
+        state_dot[9:12] = [p_dot, q_dot, r_dot]  # velocità angolari
+
+        return state_dot
+    
+    # === Integration methods ===
+    def euler_integration(self, thrust, torque, dt):
+        state_dot = self.compute_derivatives(self.clean_state, thrust, torque)
+        self.clean_state += dt * state_dot
+
+    def runge_kutta_2_integration(self, thrust, torque, dt):
+        state = self.clean_state.copy()
+        k1 = self.compute_derivatives(state, thrust, torque)
+        k2 = self.compute_derivatives(state + 0.5 * dt * k1, thrust, torque)
+        self.clean_state = state + dt * k2
+
+    def runge_kutta_45_integration(self, thrust, torque, dt):
+        state = self.clean_state.copy()
+        k1 = self.compute_derivatives(state, thrust, torque)
+        k2 = self.compute_derivatives(state + dt * k1 * 0.2, thrust, torque)
+        k3 = self.compute_derivatives(state + dt * (3*k1 + 9*k2)/40, thrust, torque)
+        k4 = self.compute_derivatives(state + dt * (44*k1 - 168*k2 + 160*k3)/45, thrust, torque)
+        k5 = self.compute_derivatives(state + dt * (19372*k1 - 76080*k2 + 72960*k3 + 7296*k4)/7290, thrust, torque)
+        k6 = self.compute_derivatives(state + dt * (439*k1/216 - 8*k2 + 3680*k3/513 - 845*k4/4104), thrust, torque)
+        self.clean_state = state + dt * (25*k1/216 + 1408*k3/2565 + 2197*k4/4104 - k5/5)
+
+        """
+         Linearized drone dynamics around hover condition.
         
         Assumptions:
         - Small angles: sin(θ) ≈ θ, cos(θ) ≈ 1
         - Hover condition: thrust ≈ mg
         - Decoupled dynamics for position and attitude
         """
+
+    def linearized_dynamics(self, thrust, torque, dt=None):
         if dt is None:
             dt = self.dt
-            
+
+        if self.integration_method == "euler":
+            self.euler_integration(thrust, torque, dt)
+        elif self.integration_method == "rk2":
+            self.runge_kutta_2_integration(thrust, torque, dt)
+        elif self.integration_method == "rk45":
+            self.runge_kutta_45_integration(thrust, torque, dt)
+        else:
+            raise ValueError(f"Unknown integration method: {self.integration_method}")
+
+        ax, ay, az = (thrust / self.mass) * self.clean_state[7], -(thrust / self.mass) * self.clean_state[6], (thrust / self.mass) - self.g
+        p, q, r = self.clean_state[9:12]
+        true_accel = np.array([ax, ay, az])
+        true_gyro = np.array([p, q, r])
+        (accel_clean, gyro_clean), (accel_noisy, gyro_noisy) = self.imu_model(true_accel, true_gyro)
+
+        self.clean_state_history.append(self.clean_state.copy())
+        self.noisy_state_history.append(self.state.copy())
+
+        """  
+        PREVIOUS CODE WITH EULER INTEGRATION ONLY
         # Current state variables
         x, y, z = self.clean_state[0:3]
         vx, vy, vz = self.clean_state[3:6]
@@ -128,6 +200,7 @@ class LinearizedDroneModel:
         # Store history
         self.clean_state_history.append(self.clean_state.copy())
         self.noisy_state_history.append(self.state.copy())
+        """
 
     def step(self, thrust, torque, dt=None):
         """
@@ -235,7 +308,10 @@ class LinearizedDroneModel:
         plt.grid(True, alpha=0.3)
 
         plt.tight_layout()
-        plt.show()
+        
+        plt.show(block=True)
+        input("Premi INVIO per chiudere i grafici...")
+
 
 
 # Alias for compatibility
@@ -255,6 +331,10 @@ def run_example_simulation():
         gyro_variance=np.array([0.02, 0.02, 0.015]),  # Reduced gyroscope noise (rad/s)
         dt=0.01
     )
+
+    # Choose integration method from terminal
+    integration_method = input("Scegli il metodo di integrazione (euler / rk2 / rk45): ").lower()
+    drone.integration_method = integration_method
     
     # Set initial position closer to target to reduce initial error
     drone.clean_state[2] = 0.5  # Start at 0.5m height instead of 0.1m
@@ -272,6 +352,8 @@ def run_example_simulation():
 
     # Create controller instance
     controller = Controllers.Controllers(drone_mass=drone_mass)
+
+    print("DEBUG: File aggiornato")
 
     print(f"Running linearized simulation for {duration} seconds ({steps} steps)...")
     print(f"Drone mass: {drone_mass} kg")
