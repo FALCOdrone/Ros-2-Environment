@@ -33,3 +33,13 @@ Before proceeding with the following instructions, ensure that you have installe
    cd visual_odom_test
    python3 visual_slam.py
    ```
+
+### Quick Notes:
+- Modify the ``` trajectory_left_root``` and ``` trajectory_right_root``` variables in the `visual_slam.py` script to point to the correct paths of the left and right image sequences from the mid-air dataset.
+- The current version does not contain slam implementation for the right camera, but you can easily extend it by following the structure used for the left camera.
+
+### TO DO:
+- Optimize slam by eliminating outliers.
+- Gather the camera pose data from both left and right cameras.
+- Integrate the visual odometry with the drone's inertial measurement unit (IMU) data for improved accuracy (EKF fusion).
+- Test the visual SLAM in real-time scenarios with our Jetson.
