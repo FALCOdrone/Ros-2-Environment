@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Main service with PX4 SITL + Gazebo + ROS2 (now uses new Gazebo by default)
+  # Main service with PX4 SITL + Gazebo + ROS2
   drone-control:
     build:
       context: ..
@@ -13,19 +13,39 @@ services:
     network_mode: host
     stdin_open: true
     tty: true
+    runtime: nvidia
+
     environment:
+      # GUI / display
       - DISPLAY=${DISPLAY}
+      - WAYLAND_DISPLAY=${WAYLAND_DISPLAY}
+      - XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR}
       - QT_X11_NO_MITSHM=1
+      - LIBGL_ALWAYS_INDIRECT=1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - __GLX_VENDOR_LIBRARY_NAME=nvidia
+      # Enable noVNC (1 = start headless X + x11vnc + noVNC)
+      - ENABLE_NO_VNC=1
+      - DISPLAY_NUM=:1
+      - NOVNC_PORT=6080
+
+      # ROS / PX4 / Gazebo
       - ROS_DOMAIN_ID=0
       - GZ_SIM_RESOURCE_PATH=/opt/px4_source/Tools/simulation/gz/models:/opt/px4_source/Tools/simulation/gz/worlds
       - PX4_GZ_MODELS=/opt/px4_source/Tools/simulation/gz/models
       - PX4_ROOT=/opt/px4_source
+
     volumes:
       - ..:/workspace
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw      # necessario per X11 forwarding
+      - /mnt/wslg:/mnt/wslg                   # necessario per WSLg GUI
       - /dev:/dev
+
     working_dir: /workspace
     command: bash
+    ports:
+      - "6080:6080"
 
   # Legacy Gazebo Classic service (for backward compatibility)
   drone-control-classic:
