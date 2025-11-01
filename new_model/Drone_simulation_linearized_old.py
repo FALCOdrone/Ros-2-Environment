@@ -3,7 +3,6 @@ import matplotlib
 matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 import Controllers
-import EKF
 
 class LinearizedDroneModel:
     def __init__(
@@ -26,9 +25,6 @@ class LinearizedDroneModel:
         self.state_history = []
         self.clean_state_history = []
         self.noisy_state_history = []
-        self.noEKF_state_history = []  # previous filtering attempt without EKF (for comparison)
-        self.ekf_state_history = []    # for EKF
-        self.comp_angle_history = []    # for complementary filter
         self.noisy_meas = []
         self.filtered_sensor = np.zeros(6)  # 3 accel + 3 gyro
         self.alpha = 0.95  # Increased filter strength for better noise reduction
@@ -64,9 +60,6 @@ class LinearizedDroneModel:
 
         # apply a low pass filter for the imu measurments
         self.filtered_sensor = (1 - self.alpha) * self.filtered_sensor + imu_meas * self.alpha
-
-        # store last accel measurement for get_sensor_readings()
-        self._last_accel_measurement = accel_noisy.copy()
         
         return (accel_true, gyro_true), (accel_noisy, gyro_noisy)
     
@@ -89,12 +82,12 @@ class LinearizedDroneModel:
         q_dot = torque[1] / Iyy
         r_dot = torque[2] / Izz
 
-        # Build the state derivatives vector
+        # Costruisci il vettore delle derivate
         state_dot = np.zeros(12)
-        state_dot[0:3] = [vx, vy, vz]        # position
-        state_dot[3:6] = [ax, ay, az]        # velocity
-        state_dot[6:9] = [p, q, r]           # angles
-        state_dot[9:12] = [p_dot, q_dot, r_dot]  # angular velocities
+        state_dot[0:3] = [vx, vy, vz]        # posizione
+        state_dot[3:6] = [ax, ay, az]        # velocità
+        state_dot[6:9] = [p, q, r]           # angoli
+        state_dot[9:12] = [p_dot, q_dot, r_dot]  # velocità angolari
 
         return state_dot
     
@@ -151,6 +144,63 @@ class LinearizedDroneModel:
         self.noisy_state_history.append(self.state.copy())
 
         
+        # PREVIOUS CODE WITH EULER INTEGRATION ONLY
+        # # Current state variables
+        # x, y, z = self.clean_state[0:3]
+        # vx, vy, vz = self.clean_state[3:6]
+        # roll, pitch, yaw = self.clean_state[6:9]
+        # p, q, r = self.clean_state[9:12]
+        
+        # # === LINEARIZED POSITION DYNAMICS ===
+        # # For small angles, the thrust creates acceleration approximately:
+        # # ax ≈ (thrust/mass) * pitch
+        # # ay ≈ -(thrust/mass) * roll  
+        # # az ≈ (thrust/mass) - g
+        
+        # ax = (thrust / self.mass) * pitch
+        # ay = -(thrust / self.mass) * roll
+        # az = (thrust / self.mass) - self.g
+        
+        # # Update velocities
+        # self.clean_state[3] += ax * dt  # vx
+        # self.clean_state[4] += ay * dt  # vy
+        # self.clean_state[5] += az * dt  # vz
+        
+        # # Update positions
+        # self.clean_state[0] += vx * dt  # x
+        # self.clean_state[1] += vy * dt  # y
+        # self.clean_state[2] += vz * dt  # z
+        
+        # # === LINEARIZED ATTITUDE DYNAMICS ===
+        # # Simplified angular acceleration (decoupled)
+        # # For small angles, the inertia matrix becomes approximately diagonal
+        # Ixx, Iyy, Izz = self.inertia[0,0], self.inertia[1,1], self.inertia[2,2]
+        
+        # p_dot = torque[0] / Ixx
+        # q_dot = torque[1] / Iyy  
+        # r_dot = torque[2] / Izz
+        
+        # # Update angular velocities
+        # self.clean_state[9] += p_dot * dt   # p
+        # self.clean_state[10] += q_dot * dt  # q
+        # self.clean_state[11] += r_dot * dt  # r
+        
+        # # Update angles (small angle assumption: angular velocity ≈ angle rate)
+        # self.clean_state[6] += p * dt   # roll
+        # self.clean_state[7] += q * dt   # pitch
+        # self.clean_state[8] += r * dt   # yaw
+        
+        # # === SENSOR SIMULATION ===
+        # # Get noisy sensor readings
+        # true_accel = np.array([ax, ay, az])
+        # true_gyro = np.array([p, q, r])
+        
+        # (accel_clean, gyro_clean), (accel_noisy, gyro_noisy) = self.imu_model(true_accel, true_gyro)
+        
+        # # Store history
+        # self.clean_state_history.append(self.clean_state.copy())
+        # self.noisy_state_history.append(self.state.copy())
+        
 
     def step(self, thrust, torque, dt=None):
         """
@@ -204,130 +254,75 @@ class LinearizedDroneModel:
         self.noisy_state_history = []
         self.noisy_meas = []
 
-
-
     def plot_state(self):
-        """
-        Plot the drone state history comparing:
-        - Clean (true simulated) state
-        - Estimated from EKF
-        - Estimated from pre_EKF (previous filter)
-        """
-        if not self.clean_state_history or not self.ekf_state_history:
+        """Plot the state history comparing clean simulation vs noisy sensor data."""
+        if not self.clean_state_history or not self.noisy_state_history:
             print("No state history available. Run simulation first.")
             return
-
+            
         clean_array = np.array(self.clean_state_history)
-        ekf_array = np.array(self.ekf_state_history)
-        pre_array = np.array(self.noEKF_state_history) if self.noEKF_state_history else None
-
+        noisy_array = np.array(self.noisy_state_history)
         time = np.arange(clean_array.shape[0]) * self.dt
 
-        plt.figure(figsize=(15, 14))
-        plt.suptitle("Drone State Comparison (Clean vs EKF vs pre_EKF)", fontsize=14, fontweight='bold')
+        plt.figure(figsize=(15, 12))
 
-        # === POSITION ===
+        # Position comparison
         plt.subplot(4, 1, 1)
-        plt.plot(time, clean_array[:, 0], 'b--', label='X Clean')
-        plt.plot(time, ekf_array[:, 0], 'b-', label='X EKF')
-        if pre_array is not None:
-            plt.plot(time[:len(pre_array)], pre_array[:, 0], 'b:', label='X pre_EKF')
-
-        plt.plot(time, clean_array[:, 1], 'g--', label='Y Clean')
-        plt.plot(time, ekf_array[:, 1], 'g-', label='Y EKF')
-        if pre_array is not None:
-            plt.plot(time[:len(pre_array)], pre_array[:, 1], 'g:', label='Y pre_EKF')
-
-        plt.plot(time, clean_array[:, 2], 'r--', label='Z Clean')
-        plt.plot(time, ekf_array[:, 2], 'r-', label='Z EKF')
-        if pre_array is not None:
-            plt.plot(time[:len(pre_array)], pre_array[:, 2], 'r:', label='Z pre_EKF')
-
-        plt.title('Position Comparison')
+        plt.plot(time, clean_array[:, 0], 'b--', label='X Clean', alpha=0.7)
+        plt.plot(time, clean_array[:, 1], 'g--', label='Y Clean', alpha=0.7)
+        plt.plot(time, clean_array[:, 2], 'r--', label='Z Clean', alpha=0.7)
+        plt.plot(time, noisy_array[:, 0], 'b-', label='X Noisy', alpha=1)
+        plt.plot(time, noisy_array[:, 1], 'g-', label='Y Noisy', alpha=1)
+        plt.plot(time, noisy_array[:, 2], 'r-', label='Z Noisy', alpha=1)
+        plt.title('Position (Linearized Model)')
         plt.ylabel('Position (m)')
         plt.legend()
         plt.grid(True, alpha=0.3)
 
-
-        # === VELOCITY ===
+        # Velocity comparison
         plt.subplot(4, 1, 2)
-        plt.plot(time, clean_array[:, 3], 'b--', label='Vx Clean')
-        plt.plot(time, ekf_array[:, 3], 'b-', label='Vx EKF')
-        if pre_array is not None:
-            plt.plot(time[:len(pre_array)], pre_array[:, 3], 'b:', label='Vx pre_EKF')
-
-        plt.plot(time, clean_array[:, 4], 'g--', label='Vy Clean')
-        plt.plot(time, ekf_array[:, 4], 'g-', label='Vy EKF')
-        if pre_array is not None:
-            plt.plot(time[:len(pre_array)], pre_array[:, 4], 'g:', label='Vy pre_EKF')
-
-        plt.plot(time, clean_array[:, 5], 'r--', label='Vz Clean')
-        plt.plot(time, ekf_array[:, 5], 'r-', label='Vz EKF')
-        if pre_array is not None:
-            plt.plot(time[:len(pre_array)], pre_array[:, 5], 'r:', label='Vz pre_EKF')
-
-        plt.title('Velocity Comparison')
+        plt.plot(time, clean_array[:, 3], 'b--', label='Vx Clean', alpha=0.7)
+        plt.plot(time, clean_array[:, 4], 'g--', label='Vy Clean', alpha=0.7)
+        plt.plot(time, clean_array[:, 5], 'r--', label='Vz Clean', alpha=0.7)
+        plt.plot(time, noisy_array[:, 3], 'b-', label='Vx Noisy', alpha=1)
+        plt.plot(time, noisy_array[:, 4], 'g-', label='Vy Noisy', alpha=1)
+        plt.plot(time, noisy_array[:, 5], 'r-', label='Vz Noisy', alpha=1)
+        plt.title('Velocity (Linearized Model)')
         plt.ylabel('Velocity (m/s)')
         plt.legend()
         plt.grid(True, alpha=0.3)
 
-
-        # === ORIENTATION (ROLL, PITCH, YAW) ===
+        # Orientation comparison
         plt.subplot(4, 1, 3)
-
-        # --- Roll ---
-        plt.plot(time, clean_array[:, 6], 'b--', label='Roll Clean')
-        if pre_array is not None:
-            plt.plot(time[:len(pre_array)], pre_array[:, 6], 'b:', label='Roll pre_EKF')
-
-        # --- Pitch ---
-        plt.plot(time, clean_array[:, 7], 'g--', label='Pitch Clean')
-        if pre_array is not None:
-            plt.plot(time[:len(pre_array)], pre_array[:, 7], 'g:', label='Pitch pre_EKF')
-
-        # --- Yaw ---
-        plt.plot(time, clean_array[:, 8], 'r--', label='Yaw Clean')
-        if pre_array is not None:
-            plt.plot(time[:len(pre_array)], pre_array[:, 8], 'r:', label='Yaw pre_EKF')
-
-        # EKF estimate only yaw as angle (6 index of the state vector)
-        plt.plot(time, ekf_array[:, 6], 'r-', label='Yaw EKF')
-
-        plt.title('Orientation Comparison')
+        plt.plot(time, clean_array[:, 6], 'b--', label='Roll Clean', alpha=0.7)
+        plt.plot(time, clean_array[:, 7], 'g--', label='Pitch Clean', alpha=0.7)
+        plt.plot(time, clean_array[:, 8], 'r--', label='Yaw Clean', alpha=0.7)
+        plt.plot(time, noisy_array[:, 6], 'b-', label='Roll Noisy', alpha=1)
+        plt.plot(time, noisy_array[:, 7], 'g-', label='Pitch Noisy', alpha=1)
+        plt.plot(time, noisy_array[:, 8], 'r-', label='Yaw Noisy', alpha=1)
+        plt.title('Orientation (Linearized Model)')
         plt.ylabel('Angle (rad)')
         plt.legend()
         plt.grid(True, alpha=0.3)
 
-
-
-        # === ANGULAR VELOCITY (p, q, r) ===
+        # Angular velocity comparison
         plt.subplot(4, 1, 4)
-
-        plt.plot(time, clean_array[:, 9], 'b--', label='p Clean')
-        if pre_array is not None:
-            plt.plot(time[:len(pre_array)], pre_array[:, 9], 'b:', label='p pre_EKF')
-
-        plt.plot(time, clean_array[:, 10], 'g--', label='q Clean')
-        if pre_array is not None:
-            plt.plot(time[:len(pre_array)], pre_array[:, 10], 'g:', label='q pre_EKF')
-
-        plt.plot(time, clean_array[:, 11], 'r--', label='r Clean')
-        if pre_array is not None:
-            plt.plot(time[:len(pre_array)], pre_array[:, 11], 'r:', label='r pre_EKF')
-
-
-        plt.title('Angular Velocity Comparison (EKF not estimated)')
+        plt.plot(time, clean_array[:, 9], 'b--', label='p Clean', alpha=0.7)
+        plt.plot(time, clean_array[:, 10], 'g--', label='q Clean', alpha=0.7)
+        plt.plot(time, clean_array[:, 11], 'r--', label='r Clean', alpha=0.7)
+        plt.plot(time, noisy_array[:, 9], 'b-', label='p Noisy', alpha=1)
+        plt.plot(time, noisy_array[:, 10], 'g-', label='q Noisy', alpha=1)
+        plt.plot(time, noisy_array[:, 11], 'r-', label='r Noisy', alpha=1)
+        plt.title('Angular Velocity (Linearized Model)')
         plt.xlabel('Time (s)')
         plt.ylabel('Angular Velocity (rad/s)')
         plt.legend()
         plt.grid(True, alpha=0.3)
 
-        plt.tight_layout(rect=[0, 0, 1, 0.96])
+        plt.tight_layout()
+        
         plt.show(block=False)
         input("Premi INVIO per chiudere i grafici...")
-        plt.close('all')
-
-
 
 
 
@@ -346,21 +341,8 @@ def run_example_simulation():
         inertia=np.diag([0.01, 0.01, 0.02]),  # Typical quadrotor inertia
         accel_variance=np.array([0.05, 0.05, 0.04]),  # Reduced accelerometer noise (m/s²)
         gyro_variance=np.array([0.02, 0.02, 0.015]),  # Reduced gyroscope noise (rad/s)
-        dt=0.01  # TO BE TUNED
+        dt=0.01
     )
-
-    # Create and initialize EKF
-    ekf = EKF.EKF()
-    initial_state = np.zeros(7)   # EKF estimates [x, y, z, vx, vy, vz, yaw]
-    initial_std = np.ones(7) * 0.1
-    ekf.initialize(initial_state, initial_std)
-
-    # === Diagnostic print for EKF tuning ===
-    print("============ EKF Covariances Check ==================================")
-    print("Q diag:", np.round(np.diag(ekf.Q), 6))
-    print("R_GPS diag:", np.round(np.diag(ekf.R_GPS), 6))
-    print("=====================================================================")
-
 
     # Choose integration method from terminal
     integration_method = input("Scegli il metodo di integrazione (euler / rk2 / rk45): ").lower()
@@ -371,11 +353,11 @@ def run_example_simulation():
     drone.state[2] = 0.5
     
     # Simulation parameters
-    duration = float(input("Insert the length of the simulation (in seconds): "))   # (shorter for faster testing)
+    duration = 50.0  # seconds (shorter for faster testing)
     steps = int(duration / drone.dt)
     
     # Set the reference altitude and attitude
-    ref_xyz = np.array([1.0, 0.0, 1.0])  # Desired position (hover at 1m and move along x of 1m)
+    ref_xyz = np.array([1.0, 0.0, 1.0])  # Desired position (hover at 1m)
     ref_attitude = np.zeros(3)  # Roll, pitch, yaw
     ref_angular_velocity = np.zeros(3)  # p, q, r
     ref_lin_velocity = np.zeros(3)  # vx, vy, vz
@@ -403,20 +385,8 @@ def run_example_simulation():
     estimated_gyro_bias = np.zeros(3)
     bias_learning_rate = 0.001  # Increased learning rate for better adaptation
     
-
-    ### DA RIVEDERE DA QUI FINO A RIGA 576 ###
-     
     # Initialize complementary filter for attitude estimation
     complementary_alpha = 0.98  # High-pass filter coefficient for gyroscope
-
-    # === Initialize pre_EKF variables ===
-    pre_EKF_pos = drone.clean_state[0:3].copy()
-    pre_EKF_vel = drone.clean_state[3:6].copy()
-    pre_EKF_angles = drone.clean_state[6:9].copy()
-    pre_EKF_ang_vel = np.zeros(3)
-    pre_EKF_accel_bias = np.zeros(3)
-    pre_EKF_gyro_bias = np.zeros(3)
-
 
     for i in range(steps):
         # First compute control based on current estimates
@@ -445,70 +415,27 @@ def run_example_simulation():
         filtered_accel_corrected = filtered_accel - estimated_accel_bias
         filtered_gyro_corrected = filtered_gyro - estimated_gyro_bias
 
-
-        # === EKF + Complementary Filter ===
-
-        # EKF prediction (using accelerometer and gyroscope)
-        ekf.predict(filtered_accel, filtered_gyro, drone.dt)
-
-        # Update GPS (we can use the clean state with added noise as fictitious GPS measurements)
-        clean_state = drone.get_clean_state()
-        pos_meas = clean_state[0:3] + np.random.normal(0, [0.05, 0.05, 0.01])
-        vel_meas = clean_state[3:6] + np.random.normal(0, [0.05, 0.05, 0.05])
-        ekf.updateFromGps(pos_meas, vel_meas, drone.dt)
-
-
-        # Complementary filter for angles roll, pitch, yaw
-        filtered_angles = ekf.complementary_filter_attitude(filtered_accel, filtered_gyro, drone.dt)
-
-        # Update EKF yaw with complementary filter estimate of yaw angle
-        ekf.ekfState[6] = filtered_angles[2]
-
-
-        # === EKF + COMPLEMENTARY FILTER FUSION ===
-
-        # Use EKF position and velocity estimates
-        filtered_pos = ekf.ekfState[0:3]
-        filtered_vel = ekf.ekfState[3:6]
-
-        # Angular velocities come directly from filtered gyroscope
-        filtered_ang_vel = filtered_gyro.copy()
-
-        # Update the drone state estimate with filtered values
-        drone.update_noisy_state_estimate(filtered_pos, filtered_vel, filtered_angles, filtered_ang_vel)
-
-        # Save EKF and complementary filter history for plotting
-        drone.ekf_state_history.append(ekf.ekfState.copy())
-        drone.comp_angle_history.append(filtered_angles.copy())
-
-
-
-        # PREVIOUS FILTERING ATTEMPT ##
-        # Apply bias compensation with better adaptation
-        pre_EKF_accel_corrected = filtered_accel - pre_EKF_accel_bias
-        pre_EKF_gyro_corrected = filtered_gyro - pre_EKF_gyro_bias
-
         # === IMPROVED ATTITUDE ESTIMATION ===
         # Use complementary filter for better attitude estimation
         # Integrate gyroscope for short-term accuracy
-        pre_EKF_gyro_angles = pre_EKF_angles + pre_EKF_gyro_corrected * drone.dt
+        gyro_angles = filtered_angles + filtered_gyro_corrected * drone.dt
         
         # Calculate attitude from accelerometer (gravity vector)
         # Only use when total acceleration is close to gravity (hovering)
-        pre_EKF_accel_magnitude = np.linalg.norm(pre_EKF_accel_corrected)
-        if 8.0 < pre_EKF_accel_magnitude < 12.0:  # Near 9.81 m/s²
-            ax, ay, az = pre_EKF_accel_corrected
-            pre_EKF_accel_roll = np.arctan2(ay, az)
-            pre_EKF_accel_pitch = np.arctan2(-ax, np.sqrt(ay**2 + az**2))
+        accel_magnitude = np.linalg.norm(filtered_accel_corrected)
+        if 8.0 < accel_magnitude < 12.0:  # Near 9.81 m/s²
+            ax, ay, az = filtered_accel_corrected
+            accel_roll = np.arctan2(ay, az)
+            accel_pitch = np.arctan2(-ax, np.sqrt(ay**2 + az**2))
             #mag_yaw = np.arctan2(drone.mag_x, drone.mag_y)
 
             # Complementary filter fusion
-            pre_EKF_angles[0] = complementary_alpha * pre_EKF_gyro_angles[0] + (1 - complementary_alpha) * pre_EKF_accel_roll
-            pre_EKF_angles[1] = complementary_alpha * pre_EKF_gyro_angles[1] + (1 - complementary_alpha) * pre_EKF_accel_pitch
-            pre_EKF_angles[2] = pre_EKF_gyro_angles[2]  # Pure integration for yaw
+            filtered_angles[0] = complementary_alpha * gyro_angles[0] + (1 - complementary_alpha) * accel_roll
+            filtered_angles[1] = complementary_alpha * gyro_angles[1] + (1 - complementary_alpha) * accel_pitch
+            filtered_angles[2] = gyro_angles[2]  # Pure integration for yaw
         else:
             # When accelerating, rely more on gyroscope
-            pre_EKF_angles = pre_EKF_gyro_angles
+            filtered_angles = gyro_angles
         
         # === IMPROVED VELOCITY AND POSITION ESTIMATION ===
         # Use a conservative approach: limit the use of noisy accelerometer for integration
@@ -516,70 +443,64 @@ def run_example_simulation():
         
         # Model-based velocity prediction (using last control inputs)
         # This would come from the known thrust and attitude commands
-        pre_EKF_predicted_accel = np.array([0, 0, (thrust/drone.mass) - drone.g])
-        pre_EKF_model_vel_update = pre_EKF_predicted_accel * drone.dt
+        predicted_accel = np.array([0, 0, (thrust/drone.mass) - drone.g])
+        model_vel_update = predicted_accel * drone.dt
         
         # Compensate for gravity and tilt in accelerometer data
         # Transform accelerometer readings to world frame (simplified)
-        pre_EKF_roll, pre_EKF_pitch = pre_EKF_angles[0], pre_EKF_angles[1]
+        roll, pitch = filtered_angles[0], filtered_angles[1]
         
         # Gravity compensation in world frame
-        pre_EKF_accel_world = pre_EKF_accel_corrected.copy()
-        #pre_EKF_accel_world[2] -= drone.g  # Remove gravity
+        accel_world = filtered_accel_corrected.copy()
+        #accel_world[2] -= drone.g  # Remove gravity
         
         # Apply tilt compensation (simplified linearized)
-        pre_EKF_accel_world[0] += drone.g * pre_EKF_pitch  # Pitch contributes to forward acceleration
-        pre_EKF_accel_world[1] -= drone.g * pre_EKF_roll   # Roll contributes to lateral acceleration
+        accel_world[0] += drone.g * pitch  # Pitch contributes to forward acceleration
+        accel_world[1] -= drone.g * roll   # Roll contributes to lateral acceleration
 
         # Blend model prediction with sensor measurement (sensor fusion)
-        pre_EKF_sensor_weight = 0.3  # Lower weight for noisy sensor data
-        pre_EKF_model_weight = 0.7   # Higher weight for model prediction
+        sensor_weight = 0.3  # Lower weight for noisy sensor data
+        model_weight = 0.7   # Higher weight for model prediction
         
-        pre_EKF_accel_vel_correction = (pre_EKF_sensor_weight * pre_EKF_accel_world + pre_EKF_model_weight * pre_EKF_predicted_accel) * drone.dt
-        pre_EKF_vel += pre_EKF_accel_vel_correction
+        accel_vel_correction = (sensor_weight * accel_world + model_weight * predicted_accel) * drone.dt
+        filtered_vel += accel_vel_correction
 
         # strong drift correction to prevent unbounded divergence
         # In practice, this would come from GPS, visual odometry, or other sensors
-        pre_EKF_clean_vel = drone.get_clean_state()[3:6]
-        pre_EKF_drift_correction_factor = 0.1  # strong correction
-        pre_EKF_velocity_error = pre_EKF_clean_vel - pre_EKF_vel
-        pre_EKF_vel += pre_EKF_velocity_error * pre_EKF_drift_correction_factor
+        clean_vel = drone.get_clean_state()[3:6]
+        drift_correction_factor = 0.1  # strong correction
+        velocity_error = clean_vel - filtered_vel
+        filtered_vel += velocity_error * drift_correction_factor
         
         # Update bias estimates based on persistent velocity errors
-        pre_EKF_accel_bias += pre_EKF_velocity_error * bias_learning_rate * 0.5
+        estimated_accel_bias += velocity_error * bias_learning_rate * 0.5
 
         # Update position with corrected velocity and strong position drift correction
-        pre_EKF_pos += pre_EKF_vel * drone.dt
+        filtered_pos += filtered_vel * drone.dt
         
         # Very strong position drift correction (simulates external position reference)
-        pre_EKF_clean_pos = drone.get_clean_state()[0:3]
-        pre_EKF_position_error = pre_EKF_clean_pos - pre_EKF_pos
-        pre_EKF_position_correction_factor = 0.05  # Much stronger position correction
-        pre_EKF_pos += pre_EKF_position_error * pre_EKF_position_correction_factor
+        clean_pos = drone.get_clean_state()[0:3]
+        position_error = clean_pos - filtered_pos
+        position_correction_factor = 0.05  # Much stronger position correction
+        filtered_pos += position_error * position_correction_factor
         
         # Angular velocity from filtered gyroscope
-        pre_EKF_ang_vel = pre_EKF_gyro_corrected.copy()
+        filtered_ang_vel = filtered_gyro_corrected.copy()
         
         # Update gyroscope bias estimates based on angular errors
-        pre_EKF_clean_angles = drone.get_clean_state()[6:9]
-        pre_EKF_angle_error = pre_EKF_clean_angles - pre_EKF_angles
-        pre_EKF_angle_correction_factor = 0.05  # Stronger angular correction
-        pre_EKF_angles += pre_EKF_angle_error * pre_EKF_angle_correction_factor
-        pre_EKF_gyro_bias += pre_EKF_angle_error * bias_learning_rate * 0.2
+        clean_angles = drone.get_clean_state()[6:9]
+        angle_error = clean_angles - filtered_angles
+        angle_correction_factor = 0.05  # Stronger angular correction
+        filtered_angles += angle_error * angle_correction_factor
+        estimated_gyro_bias += angle_error * bias_learning_rate * 0.2
 
-        # Save pre-EKF estimated state for comparison (without overwriting main state)
-        drone.noEKF_state_history.append(
-        np.concatenate([pre_EKF_pos, pre_EKF_vel, pre_EKF_angles, pre_EKF_ang_vel])
-        )
-
-
-
+        # Update the noisy state estimate with filtered values
+        drone.update_noisy_state_estimate(filtered_pos, filtered_vel, filtered_angles, filtered_ang_vel)
         
         # Print progress every second
         if i % 100 == 0:
             pos_error = np.linalg.norm(filtered_pos - ref_xyz)
             print(f"Time: {i*drone.dt:.1f}s, Position error: {pos_error:.3f}m")
-            print(f"Step {i}: ekfCov diag: {np.round(np.diag(ekf.ekfCov),6)}")
     
     print("Simulation complete!")
     print(f"Final clean position: {drone.get_clean_state()[:3]}")
