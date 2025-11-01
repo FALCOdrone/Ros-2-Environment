@@ -39,15 +39,11 @@ def scale_to_fit(img, max_w=1200, max_h=800):
 
 bf = cv2.BFMatcher(cv2.NORM_HAMMING)
 
-# previous frame storage
-prev_kp = None
-prev_des = None
-prev_img = None
-
-# feature database (not huge memory now)
-all_keypoints = []
-all_descriptors = []
-first_image = False
+# helper lists to store points and descriptors
+frame_left_points = []
+frame_left_des = []
+frame_right_points = []
+frame_right_des = []
 
 
 # ----------- Processing Loop -----------
@@ -62,81 +58,71 @@ for i, (left_path, right_path) in enumerate(pair_paths):
         print(f"[WARN] skipping frame {i}, could not load")
         continue
 
-    kp, des = feature_extractor.detectAndCompute(img_L, None)
+    # Store keypoints and descriptors for later matching
+    if img_R is not None and img_L is not None:
+        kp_R, des_R = feature_extractor.detectAndCompute(img_R, None)
+        kp_L, des_L = feature_extractor.detectAndCompute(img_L, None)
 
-    # Store first frame descriptors for later matching
-    if i == 0:
-        first_kp = kp
-        first_des = des
-        first_image = img_L.copy()
+        if des_R is not None and len(des_R) > 0 and des_L is not None and len(des_L) > 0:
+            raw_matches = bf.knnMatch(des_L, des_R, k=2)
+            good_matches = [m for m, n in raw_matches if m.distance < 0.75 * n.distance]
+            print(f"[{i:04d}] t={t:.3f}s  stereo matches: {len(good_matches)}")
 
-    # Store 20th frame descriptors for later matching
-    if i == 20:
-        twenty_kp = kp
-        twenty_des = des
-        twenty_image = img_L.copy()
+            # Append all matched keypoints and descriptors from this frame
+            for m in good_matches:
+                # m.queryIdx is index in des_L / kp_L, m.trainIdx is index in des_R / kp_R
+                frame_left_points.append(kp_L[m.queryIdx].pt)
+                frame_left_des.append(des_L[m.queryIdx])
+                frame_right_points.append(kp_R[m.trainIdx].pt)
+                frame_right_des.append(des_R[m.trainIdx])
 
-    frame_points = []
-    frame_des = []
+            print(f"[{i:04d}] t={t:.3f}s  stereo matches: {len(good_matches)}")
+        
 
-    if prev_des is not None and des is not None and len(des) > 0:
+        # Store first frame descriptors for later matching
+        if i == 0:
+            first_left_kp = kp_L
+            first_left_des = des_L
+            first_left_image = img_L.copy()
+            first_right_kp = kp_R
+            first_right_des = des_R
+            first_right_image = img_R.copy()
 
-        raw_matches = bf.knnMatch(prev_des, des, k=2) # using KNN (k nearest neighbors) matcher -> probably needs to be optimized
+        if i == 20: # example of storing 20th frame
+            twenty_left_kp = kp_L
+            twenty_left_des = des_L
+            twenty_left_image = img_L.copy()
+            twenty_right_kp = kp_R
+            twenty_right_des = des_R
+            twenty_right_image = img_R.copy()
 
-        # Lowe's ratio test, we are getting better matches if the descriptors have low distance
-        good_matches = [m for m, n in raw_matches if m.distance < 0.75 * n.distance]
-
-        for m in good_matches:
-            frame_points.append(kp[m.trainIdx].pt)
-            frame_des.append(des[m.trainIdx])
-
-        print(f"[{i:04d}] t={t:.3f}s  matches: {len(good_matches)}")
-
-        # Visualize matches only for the first 2 frames
-        if i < 2 and prev_img is not None and prev_kp is not None and len(good_matches) > 0:
+        # visualize matches only dor the first 2 left and right frames
+        if i < 2 and img_L is not None and kp_L is not None and len(good_matches) > 0:
             try:
-                img_matches = cv2.drawMatches(prev_img, prev_kp, img_L, kp, good_matches, None,
+                img_matches = cv2.drawMatches(img_L, kp_L, img_R, kp_R, good_matches, None,
                                               matchColor=(0,255,0), singlePointColor=(255,0,0))
             except:
-                img_prev_kp = cv2.drawKeypoints(prev_img, prev_kp, None, color=(0,255,0))
-                img_cur_kp  = cv2.drawKeypoints(img_L, kp, None, color=(0,255,0))
-                img_matches = np.hstack((img_prev_kp, img_cur_kp))
-
-            cv2.imshow(f"Frame {i:04d}", scale_to_fit(img_matches))
+                img_L_kp = cv2.drawKeypoints(img_L, kp_L, None, color=(0,255,0))
+                img_R_kp  = cv2.drawKeypoints(img_R, kp_R, None, color=(0,255,0))
+                img_merge_matches = np.hstack((img_L_kp, img_R_kp))
+            # choose the image that was actually created for display
+            display_img = img_matches if 'img_matches' in locals() else img_merge_matches
+            cv2.imshow(f"Left Frame {i:04d}", scale_to_fit(display_img))
             cv2.waitKey(0)
 
         # When we reach frame 20, compute first ↔ 20 matches
-        if i == 20 and first_des is not None and twenty_des is not None:
-
-            raw_matches_20 = bf.knnMatch(first_des, twenty_des, k=2)
-            matches_20 = [m for m, n in raw_matches_20 if m.distance < 0.75 * n.distance]
-
-            print(f"[MATCH CHECK] First frame vs 20th frame: {len(matches_20)} good matches")
-
+        if i == 20 and des_L is not None and des_R is not None:
             try:
-                img_matches_20 = cv2.drawMatches(
-                    first_image, first_kp,
-                    twenty_image, twenty_kp,
-                    matches_20, None,
-                    matchColor=(0,255,0),
-                    singlePointColor=(255,0,0)
-                )
+                img_matches = cv2.drawMatches(img_L, kp_L, img_R, kp_R, good_matches, None,
+                                              matchColor=(0,255,0), singlePointColor=(255,0,0))
             except:
-                img_first_kp = cv2.drawKeypoints(first_image, first_kp, None, color=(0,255,0))
-                img_twenty_kp = cv2.drawKeypoints(twenty_image, twenty_kp, None, color=(0,255,0))
-                img_matches_20 = np.hstack((img_first_kp, img_twenty_kp))
+                img_L_kp = cv2.drawKeypoints(img_L, kp_L, None, color=(0,255,0))
+                img_R_kp  = cv2.drawKeypoints(img_R, kp_R, None, color=(0,255,0))
+                img_merge_matches = np.hstack((img_L_kp, img_R_kp))
 
-            cv2.imshow("First vs 20th Frame Matching", scale_to_fit(img_matches_20))
+            display_img = img_matches if 'img_matches' in locals() else img_merge_matches
+            cv2.imshow(f"Left Frame {i:04d}", scale_to_fit(display_img))
             cv2.waitKey(0)
-        else:
-            print(f"[{i:04d}] t={t:.3f}s  (first frame / no matches)")
-
-    all_keypoints.append(frame_points)
-    all_descriptors.append(frame_des)
-
-    prev_kp = kp
-    prev_des = des
-    prev_img = img_L.copy()
 
 dt = time.time() - start_time
 print(f"--- Done: {len(pair_paths)} frames in {dt:.2f}s ---")
