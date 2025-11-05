@@ -37,7 +37,7 @@ DRONE MODEL OVERVIEW:
 
 6. SENSOR MODEL:
    - IMU: Provides noisy accelerometer and gyroscope measurements
-   - Accelerometer: a_measured = a_true + noise + bias
+   - Accelerometer: a_measured = a_true + noise + biase
    - Gyroscope: ω_measured = ω_true + noise + bias
 """
 
@@ -45,22 +45,20 @@ DRONE MODEL OVERVIEW:
 class Controllers:
     def __init__(self, drone_mass=1.0):
         # PID gains for position control - better tuned for linearized model
-        self.kp_pos = np.array([2.0, 1.5, 25.0])  # Proportional gains for x, y, z (reduced Z)
-        self.ki_pos = np.array([0.05, 0.05, 0.01])  # Integral gains for x, y, z (reduced Z integral)
-        self.kd_pos = np.array([4.0, 3.0, 9.5])  # Derivative gains for x, y, z (reduced Z)
+        self.kp_pos = np.array([3.0, 2.0, 3.0])  # Proportional gains for x, y, z (reduced Z)
+        self.ki_pos = np.array([1.1, 1.1, 0.05])  # Integral gains for x, y, z (reduced Z integral)
+        self.kd_pos = np.array([5.0, 1.0, 1.5])  # Derivative gains for x, y, z (reduced Z)
 
         # PID gains for attitude control - better tuned
-        self.kp_att = np.array([3.0, 3.0, 3.0])  # Proportional gains for roll, pitch, yaw
-        self.ki_att = np.array([0.0, 0.0, 0.01])  # Integral gains for roll, pitch, yaw
-        self.kd_att = np.array([0.4, 0.4, 0.8])  # Derivative gains for roll, pitch, yaw
+        self.kp_att = np.array([5.0, 5.0, 1.5])  # Proportional gains for roll, pitch, yaw
+        self.ki_att = np.array([1.1, 1.1, 0.05])  # Integral gains for roll, pitch, yaw
+        self.kd_att = np.array([1.5, 1.0, 0.5])  # Derivative gains for roll, pitch, yaw
 
         # State variables for integral terms
         self.pos_error_integral = np.zeros(3)
         self.att_error_integral = np.zeros(3)
         self.prev_pos_error = np.zeros(3)
         self.prev_att_error = np.zeros(3)
-        self.prev_torque_cmd = np.zeros(3)   # used after for the rate limiting of torque variations
-        self.prev_pos_desired = np.zeros(3)   # used to detect abrupt changes in position reference and reset integral to avoid windup
         self.dt = 0.01  # Time step for integration
         
         # Drone parameters
@@ -68,10 +66,10 @@ class Controllers:
         self.gravity = 9.81
         
         # Saturation limits
-        self.max_thrust = 40.0  # Maximum thrust (N) - reduced for safety (for a single motor = 42.183N)
-        #self.max_thrust = 25.0  previous guess
+        self.max_thrust = 42.183  # Maximum thrust (N) - reduced for safety (for a single motor = 42.183N)
+        #self.max_thrust = 25.0
         self.min_thrust = 0.0   # Minimum thrust (N)
-        self.max_torque = 0.05   # Maximum torque (N⋅m) - reduced for stability
+        self.max_torque = 0.5   # Maximum torque (N⋅m) - reduced for stability
 
     def low_level_control(self, pos_desired, vel_desired, att_desired, pos_current, vel_current, att_current):
         # ===== POSITION CONTROL =====
@@ -82,14 +80,14 @@ class Controllers:
         self.pos_error_integral[2] += posZ_error * self.dt
         
         # Anti-windup: limit integral term - tighter limits
-        self.pos_error_integral[2] = np.clip(self.pos_error_integral[2], -0.2, 0.2)
-        #self.pos_error_integral[2] = np.clip(self.pos_error_integral[2], -2.0, 2.0)  previous implementation
+        self.pos_error_integral[2] = np.clip(self.pos_error_integral[2], -1.0, 1.0)
+        #self.pos_error_integral[2] = np.clip(self.pos_error_integral[2], -2.0, 2.0)
 
         # Add gravity compensation (mass * gravity) to the thrust command
         gravity_compensation = self.drone_mass * self.gravity
         forceZ_cmd = (self.kp_pos[2] * posZ_error + 
-                      self.ki_pos[2] * self.pos_error_integral[2] + 
-                      self.kd_pos[2] * velZ_error + gravity_compensation)
+                     self.ki_pos[2] * self.pos_error_integral[2] + 
+                     self.kd_pos[2] * velZ_error + gravity_compensation)
         
         # Saturate thrust command
         forceZ_cmd = np.clip(forceZ_cmd, self.min_thrust, self.max_thrust)
@@ -109,29 +107,22 @@ class Controllers:
         self.pos_error_integral[1] += posY_error * self.dt
         
         # Anti-windup for X,Y - tighter limits
-        self.pos_error_integral[0] = np.clip(self.pos_error_integral[0], -0.2, 0.2)
-        self.pos_error_integral[1] = np.clip(self.pos_error_integral[1], -0.2, 0.2)
-        # self.pos_error_integral[0] = np.clip(self.pos_error_integral[0], -1.0, 1.0)
-        # self.pos_error_integral[1] = np.clip(self.pos_error_integral[1], -1.0, 1.0)  previous implementation
-
-        # Reset integral terms if abrupt change in reference
-        if np.linalg.norm(pos_desired[:2] - self.prev_pos_desired[:2]) > 1.0:
-            self.pos_error_integral[:2] = 0.0    # Put integral to 0 if abrupt change in the reference of XY
-        # Update memory of the reference
-        self.prev_pos_desired = pos_desired.copy()
- 
+      #   self.pos_error_integral[0] = np.clip(self.pos_error_integral[0], -1.0, 1.0)
+      #   self.pos_error_integral[1] = np.clip(self.pos_error_integral[1], -1.0, 1.0)
+        self.pos_error_integral[0] = np.clip(self.pos_error_integral[0], -0.5, 0.5)
+        self.pos_error_integral[1] = np.clip(self.pos_error_integral[1], -0.5, 0.5)
 
         # Desired accelerations in X and Y - with limits
         desired_ax = (self.kp_pos[0] * posX_error + 
-                      self.ki_pos[0] * self.pos_error_integral[0] + 
-                      self.kd_pos[0] * velX_error)
+                     self.ki_pos[0] * self.pos_error_integral[0] + 
+                     self.kd_pos[0] * velX_error)
         
         desired_ay = (self.kp_pos[1] * posY_error + 
-                      self.ki_pos[1] * self.pos_error_integral[1] + 
-                      self.kd_pos[1] * velY_error)
+                     self.ki_pos[1] * self.pos_error_integral[1] + 
+                     self.kd_pos[1] * velY_error)
         
         # Limit desired accelerations to reasonable values
-        max_accel = 0.1  # m/s²
+        max_accel = 0.5  # m/s²
         #max_accel = 2.0  # m/s² - increased for better responsiveness
         desired_ax = np.clip(desired_ax, -max_accel, max_accel)
         desired_ay = np.clip(desired_ay, -max_accel, max_accel)
@@ -139,21 +130,14 @@ class Controllers:
         # Convert desired accelerations to desired angles
         # Prevent division by zero and ensure minimum thrust
         safe_thrust = max(forceZ_cmd, 5.0)  # Minimum 5N thrust
-
-        # Limit desired angles to conservative values for stability
-        max_angle = 0.08  # reduce for safety, ±5.73 degrees approximately -> 0.1 rad
-        #max_angle = 0.2 # ±11.46 degrees approximately -> 0.2 rad
-        angle_safety_factor = 0.6  # scale down further for safety
-        raw_desired_pitch = (desired_ax * self.drone_mass) / safe_thrust
-        raw_desired_roll  = -(desired_ay * self.drone_mass) / safe_thrust
-        desired_pitch = np.clip(angle_safety_factor * raw_desired_pitch, -max_angle, max_angle)
-        desired_roll  = np.clip(angle_safety_factor * raw_desired_roll,  -max_angle, max_angle)
-        # desired_pitch = np.clip(desired_pitch, -max_angle, max_angle)
-        # desired_roll = np.clip(desired_roll, -max_angle, max_angle)
-        # Previous implemetation:
-        # desired_pitch = (desired_ax * self.drone_mass) / safe_thrust
-        # desired_roll = -(desired_ay * self.drone_mass) / safe_thrust  # Note the negative sign
+        desired_pitch = (desired_ax * self.drone_mass) / safe_thrust
+        desired_roll = -(desired_ay * self.drone_mass) / safe_thrust  # Note the negative sign
         
+        # Limit desired angles to conservative values for stability
+        max_angle = 0.1  # ±5.73 degrees approximately -> 0.1 rad
+        #max_angle = 0.2 # ±11.46 degrees approximately -> 0.2 rad
+        desired_pitch = np.clip(desired_pitch, -max_angle, max_angle)
+        desired_roll = np.clip(desired_roll, -max_angle, max_angle)
         
         # Update desired attitude to include position control
         att_desired_modified = np.array([desired_roll, desired_pitch, att_desired[2]])
@@ -170,18 +154,15 @@ class Controllers:
         self.att_error_integral += att_error * self.dt
         
         # Anti-windup: limit integral terms
-        self.att_error_integral = np.clip(self.att_error_integral, -0.1, 0.1)
-        #self.att_error_integral = np.clip(self.att_error_integral, -1.0, 1.0) previous implementation
+        #self.att_error_integral = np.clip(self.att_error_integral, -1.0, 1.0)
+        self.att_error_integral = np.clip(self.att_error_integral, -0.5, 0.5)
         
         torque_cmd = (self.kp_att * att_error + 
                       self.ki_att * self.att_error_integral + 
                       self.kd_att * att_derivative)
-
-        # Rate limiter on torque commands: limit variations for each control step
-        max_torque_rate = np.array([0.02, 0.02, 0.05])  # Nm per step
-        torque_cmd = np.clip(torque_cmd, self.prev_torque_cmd - max_torque_rate, self.prev_torque_cmd + max_torque_rate)
-        self.prev_torque_cmd = torque_cmd.copy()
-        torque_cmd = np.clip(torque_cmd, -self.max_torque, self.max_torque)   # Saturate max torque to avoid abrupt angular changes
+        
+        # Saturate torque commands
+        torque_cmd = np.clip(torque_cmd, -self.max_torque, self.max_torque)
         
         return forceZ_cmd, torque_cmd
     

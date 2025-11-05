@@ -1,6 +1,6 @@
 import numpy as np
-import matplotlib
-matplotlib.use('Qt5Agg')
+#import matplotlib
+#matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 import Controllers
 import Complementary_filter
@@ -65,7 +65,7 @@ class LinearizedDroneModel:
         # Use M*g for horizontal forces, but use 'thrust' for vertical force.
         HOVER_THRUST = self.mass * self.g 
         
-        MAX_ANGLE_ACCEL = 0.05  # Limit to very small angles, in rad 
+        MAX_ANGLE_ACCEL = 0.5 
         roll_limited = np.clip(roll, -MAX_ANGLE_ACCEL, MAX_ANGLE_ACCEL)
         pitch_limited = np.clip(pitch, -MAX_ANGLE_ACCEL, MAX_ANGLE_ACCEL)
 
@@ -86,10 +86,6 @@ class LinearizedDroneModel:
         q_dot = np.clip(torque[1] / Iyy, -MAX_ANG_ACCEL, MAX_ANG_ACCEL)
         r_dot = np.clip(torque[2] / Izz, -MAX_ANG_ACCEL, MAX_ANG_ACCEL)
         
-        # Lock yaw dynamics (otherwise yaw oscillate like a sinusoid with increasing amplitude, diverging soon)
-        r_dot = 0.0
-        r = 0.0
-
         # Build the derivative vector
         state_dot = np.zeros(12)
         state_dot[0:3] = [vx, vy, vz]
@@ -132,11 +128,6 @@ class LinearizedDroneModel:
             self.runge_kutta_45_integration(thrust, torque, dt)
         else:
             raise ValueError(f"Unknown integration method: {self.integration_method}")
-
-        # --- Limit horizontal velocities ---
-        MAX_VEL_XY = 0.1  # m/s
-        self.clean_state[3] = np.clip(self.clean_state[3], -MAX_VEL_XY, MAX_VEL_XY)
-        self.clean_state[4] = np.clip(self.clean_state[4], -MAX_VEL_XY, MAX_VEL_XY)
 
         roll, pitch, yaw = self.clean_state[6:9]
         p, q, r = self.clean_state[9:12]
@@ -285,9 +276,8 @@ class LinearizedDroneModel:
 
         plt.tight_layout()
         
-        plt.show(block=False)
+        plt.show()
         input("Premi INVIO per chiudere i grafici...")
-        plt.close('all')
 
 
 # Alias for compatibility
@@ -340,11 +330,11 @@ def run_example_simulation():
     drone.state[2] = 0.0
 
     # Simulation parameters
-    duration = float(input("Insert the length of the simulation (in seconds): "))   # (e.g., 50 seconds)
+    duration = 50.0 
     steps = int(duration / drone.dt)
     
     # Set the reference altitude and attitude
-    ref_xyz = np.array([1.5, 0.0, 3.0])  # Desired position (hover at 3m, move along x of 1.5m)
+    ref_xyz = np.array([0.0, 0.0, 0.0])  # Desired position (hover at 0m)
     ref_attitude = np.zeros(3)  # Roll, pitch, yaw
     ref_lin_velocity = np.zeros(3)  # vx, vy, vz
     
@@ -418,22 +408,17 @@ def run_example_simulation():
             # Use EKF estimates for position/velocity
             pos_current=ekf.ekfState[0:3],
             vel_current=ekf.ekfState[3:6],
-
             # Use CF estimate for attitude
             att_current=filtered_angles
-
         )
-
-        # --- DEBUG: remove yaw control ---
-        # torque_cmd[2] = 0.0
         
         # Apply control commands
-        thrust = forceZ_cmd
-        torque = np.array(torque_cmd)
+        #thrust = forceZ_cmd
+        #torque = np.array(torque_cmd)
 
         # TEMP TEST: disable controller to isolate estimator
-        #thrust = drone.mass * drone.g
-        # torque = np.zeros(3)
+        thrust = drone.mass * drone.g
+        torque = np.zeros(3)
 
         # Step the simulation
         drone.step(thrust, torque)
