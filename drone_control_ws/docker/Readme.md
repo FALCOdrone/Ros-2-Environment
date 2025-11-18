@@ -3,8 +3,8 @@
 1. Build the docker image (if not done already):
 
    ```bash
-   cd drone_control_ws/docker
-   docker build -t drone_control_image .
+   cd ~/Ros-2-Environment/drone_control_ws
+   docker build -t drone_control_image -f docker/Dockerfile .
    ```
 2. Run the docker container:
 
