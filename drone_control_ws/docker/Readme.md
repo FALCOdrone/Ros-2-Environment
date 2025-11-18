@@ -1,41 +1,38 @@
 ## INSTRUCTIONS FOR RUNNING A NEW CUSTOM X500 DRONE SIMULATION WITH ROS2 BRIDGE
 
-1. Build the docker image (if not done already):
+1. Build the docker image (if not done already) and run the docker container:
 
    ```bash
    cd ~/Ros-2-Environment/drone_control_ws
-   docker build -t drone_control_image -f docker/Dockerfile .
+   ./start_up_container.sh
    ```
-2. Run the docker container:
 
-   ```bash
-   docker-compose up -d drone-control
-   docker exec -it drone_control_container bash
-   ```
-3. Inside the container, launch the Gazebo simulation:
+2. Inside the container, launch the Gazebo simulation:
 
    ```bash
    ./launch_x500_enhanced.sh
 
     # Keep this terminal running to maintain the simulation environment
     ```
-4. Open a new terminal and attach to the running container:
+3. Open a new terminal and attach to the running container:
 
    ```bash
-   docker exec -it drone_control_container bash
+   cd ~/Ros-2-Environment/drone_control_ws
+   ./start_up_container.sh
    ```
-5. Inside the container, start the Gazebo-ROS2 bridge:
+4. Inside the container, start the Gazebo-ROS2 bridge:
 
    ```bash
    ./gz_ros2_bridge.sh
     # Keep this terminal running to maintain the topic translations
     ```
-6. Open another terminal and attach to the running container:
+5. Open another terminal and attach to the running container:
 
    ```bash
-   docker exec -it drone_control_container bash
+   cd ~/Ros-2-Environment/drone_control_ws
+   ./start_up_container.sh
    ```
-7. Now you can run your custom ROS2 nodes to control the drone, process sensor data, or visualize information. For example:
+6. Now you can run your custom ROS2 nodes to control the drone, process sensor data, or visualize information. For example:
 
    ```bash
     # Your navigation/control code
