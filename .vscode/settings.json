@@ -1,3 +1,3 @@
 {
-    "cmake.sourceDirectory": "/home/lorenzo/Ros-2-Environment/falco_ws/src/drone"
+    "cmake.sourceDirectory": "/home/lorenzo/Ros-2-Environment/drone_control_ws/src/drone_sensors_cpp"
 }
