@@ -9,7 +9,7 @@
 2. Run the docker container:
 
    ```bash
-   docker-compose up -d drone_control_container
+   docker-compose up -d drone-control
    docker exec -it drone_control_container bash
    ```
 3. Inside the container, launch the Gazebo simulation:
