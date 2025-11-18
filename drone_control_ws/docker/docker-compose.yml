@@ -5,7 +5,7 @@ services:
   drone-control:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.gz
+      dockerfile: docker/Dockerfile
     image: drone_control_ros2_gz:latest
     container_name: drone_control_container
     hostname: drone-control
