@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Launch script for enhanced X500 with GPS and stereo cameras
 set -e
 
@@ -8,8 +7,8 @@ echo "Starting enhanced X500 with GPS and stereo cameras..."
 # Source ROS2 environment
 source /opt/ros/humble/setup.bash
 
-# Set up Gazebo environment
-export GZ_SIM_RESOURCE_PATH=/opt/px4_source/Tools/simulation/gz/models:/opt/px4_source/Tools/simulation/gz/worlds
+# Set up Gazebo environment (add local workspace models)
+export GZ_SIM_RESOURCE_PATH=/workspace/src/drone_control/models:/opt/px4_source/Tools/simulation/gz/models:$GZ_SIM_RESOURCE_PATH
 export PX4_GZ_MODELS=/opt/px4_source/Tools/simulation/gz/models
 
 # Start Gazebo with default world
@@ -20,13 +19,22 @@ GZ_PID=$!
 # Wait for Gazebo to initialize
 sleep 8
 
+# Ensure the create service is available
+echo "Waiting for /world/default/create service..."
+while ! gz service -l | grep -q "/world/default/create"; do
+    sleep 0.5
+done
+
+# Absolute path to your model SDF
+MODEL_PATH="/workspace/models/x500_enhanced/model.sdf"
+
 # Spawn the enhanced x500 model
 echo "Spawning enhanced x500 with GPS and stereo cameras..."
 gz service -s /world/default/create \
     --reqtype gz.msgs.EntityFactory \
     --reptype gz.msgs.Boolean \
     --timeout 5000 \
-    --req "sdf_filename: \"x500_enhanced\", pose: { position: { x: 0, y: 0, z: 1 } }"
+    --req "sdf_filename: \"$MODEL_PATH\" pose { position { x: 0 y: 0 z: 1 } }"
 
 if [ $? -eq 0 ]; then
     echo "✅ Enhanced X500 spawned successfully!"
