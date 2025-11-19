@@ -10,7 +10,7 @@ if [[ "$(docker images -q drone_control_ros2_gz 2> /dev/null)" == "" ]]; then
      docker build -t drone_control_ros2_gz -f docker/Dockerfile .
 else
      echo "drone_control_ros2_gz docker image already exists. Skipping build."
-fiadded a sturtup container bash file
+fi
 
 # ====================================
 # Run the docker container:
@@ -20,7 +20,7 @@ fiadded a sturtup container bash file
 if [ "$(docker ps -q -f name=drone_control_container)" ]; then
     echo "drone_control_container is already running. Skipping startup."
 else
-    docker-compose up -d drone-control
+    docker-compose -f docker/docker-compose.yml up -d drone-control
 fi
 
 # Attach to the running container
