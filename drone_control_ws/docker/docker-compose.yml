@@ -27,6 +27,33 @@ services:
     working_dir: /workspace
     command: bash
 
+  drone-control-gzf:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gzh
+    image: drone_control_ros2_gz:latest
+    container_name: drone_control_gzf_container
+    hostname: drone-control-gzf
+    privileged: true
+    network_mode: host
+    stdin_open: true
+    tty: true
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+      - GZ_SIM_RESOURCE_PATH=/opt/px4_source/Tools/simulation/gz/models:/opt/px4_source/Tools/simulation/gz/worlds
+      - PX4_GZ_MODELS=/opt/px4_source/Tools/simulation/gz/models
+      - PX4_ROOT=/opt/px4_source
+    volumes:
+      - ..:/workspace
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev
+    working_dir: /workspace
+    command: bash
+    profiles:
+      - gazebo-garden
+
   # Legacy Gazebo Classic service (for backward compatibility)
   drone-control-classic:
     build:

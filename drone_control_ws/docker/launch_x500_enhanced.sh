@@ -7,8 +7,11 @@ echo "Starting enhanced X500 with GPS and stereo cameras..."
 # Source ROS2 environment
 source /opt/ros/humble/setup.bash
 
+# Source Gazebo Fortress/GZ
+export GZ_VERSION=fortress
+
 # Set up Gazebo environment (add local workspace models)
-export GZ_SIM_RESOURCE_PATH=/workspace/src/drone_control/models:/opt/px4_source/Tools/simulation/gz/models:$GZ_SIM_RESOURCE_PATH
+export GZ_SIM_RESOURCE_PATH="/workspace/models:/opt/px4_source/Tools/simulation/gz/models${GZ_SIM_RESOURCE_PATH:+:$GZ_SIM_RESOURCE_PATH}"
 export PX4_GZ_MODELS=/opt/px4_source/Tools/simulation/gz/models
 
 # Start Gazebo with default world
