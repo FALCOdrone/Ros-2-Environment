@@ -49,15 +49,13 @@ echo ""
 # Determine the directory where this script lives
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Host workspace directory (relative to the script; adjust if needed)
-HOST_WS="${HOST_WS:-${SCRIPT_DIR}/ros2_ws}"
-
-# Ensure the host workspace exists (and has src)
-mkdir -p "${HOST_WS}/src"
+# Workspace is ../ros2_ws relative to the script
+HOST_WS="${HOST_WS:-${SCRIPT_DIR}/../ros2_ws}"
 
 echo "Using host workspace: ${HOST_WS}"
 
-# Start the container with docker run
+mkdir -p "${HOST_WS}/src"
+
 docker run -it --rm \
     --name ros2_with_falco_drone \
     --net=host \
@@ -69,3 +67,4 @@ docker run -it --rm \
     -v "${HOST_WS}:/home/robotics/ros2_ws" \
     lorenzo195815/ros2_env:latest \
     /bin/bash
+
