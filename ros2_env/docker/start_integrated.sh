@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Enable X11 forwarding for GUI applications
-xhost +local:docker
+xhost +local:docker 
 
 # Create Xauth file if it doesn't exist
 export XAUTH=/tmp/.docker.xauth
@@ -42,6 +42,21 @@ echo "  3. Control falco_drone:"
 echo "     ros2 topic pub /simple_drone/takeoff std_msgs/msg/Empty {} --once"
 echo ""
 
+#!/bin/bash
+
+# ... everything above stays the same ...
+
+# Determine the directory where this script lives
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Host workspace directory (relative to the script; adjust if needed)
+HOST_WS="${HOST_WS:-${SCRIPT_DIR}/ros2_ws}"
+
+# Ensure the host workspace exists (and has src)
+mkdir -p "${HOST_WS}/src"
+
+echo "Using host workspace: ${HOST_WS}"
+
 # Start the container with docker run
 docker run -it --rm \
     --name ros2_with_falco_drone \
@@ -51,6 +66,6 @@ docker run -it --rm \
     -e XAUTHORITY=$XAUTH \
     -v $XAUTH:$XAUTH \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
-    -v /home/lorenzo/Ros-2-Environment/ros2_env/ros2_ws:/home/robotics/ros2_ws \
+    -v "${HOST_WS}:/home/robotics/ros2_ws" \
     lorenzo195815/ros2_env:latest \
     /bin/bash
