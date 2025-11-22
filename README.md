@@ -47,7 +47,7 @@ Before running the simulation, ensure you have:
 First, build the updated Docker image with all required packages:
 
 ```bash
-cd Ros-2-Environment/ros2_env/
+cd Ros-2-Environment/ros2_env/docker
 ./build.sh
 ```
 
@@ -104,7 +104,7 @@ The `drone_position_control` node enables closed-loop pose and velocity control 
 ### 3. Publish the button topic
 Publish an integer message for letting the drone to take off
 ```bash
-ros2 topic pub /start_button std_msgs/msg/Int8 "data: 1"
+ros2 topic pub /start_button std_msgs/msg/Int8 "data: 1" --once
 ```
 
 ## Control System Details
