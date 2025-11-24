@@ -101,7 +101,7 @@ RUN echo '#!/bin/bash' > /usr/local/bin/launch_px4_gz_x500.sh \
     && echo 'echo "Checking git status..."' >> /usr/local/bin/launch_px4_gz_x500.sh \
     && echo 'git status || echo "Git status check failed"' >> /usr/local/bin/launch_px4_gz_x500.sh \
     && echo 'echo "Building PX4 for the first time (this may take several minutes)..."' >> /usr/local/bin/launch_px4_gz_x500.sh \
-    && echo 'if ! make px4_sitl gz_x500; then' >> /usr/local/bin/launch_px4_gz_x500.sh \
+    && echo 'if ! make px4_sitl gz_x500_depth; then' >> /usr/local/bin/launch_px4_gz_x500.sh \
     && echo '    echo "Build failed. Checking git repository state..."' >> /usr/local/bin/launch_px4_gz_x500.sh \
     && echo '    git fetch --tags || echo "Fetch tags failed"' >> /usr/local/bin/launch_px4_gz_x500.sh \
     && echo '    git fetch --unshallow || echo "Already unshallow or fetch failed"' >> /usr/local/bin/launch_px4_gz_x500.sh \
@@ -109,7 +109,7 @@ RUN echo '#!/bin/bash' > /usr/local/bin/launch_px4_gz_x500.sh \
     && echo '    make clean' >> /usr/local/bin/launch_px4_gz_x500.sh \
     && echo '    make submodulesclean' >> /usr/local/bin/launch_px4_gz_x500.sh \
     && echo '    git submodule update --init --recursive' >> /usr/local/bin/launch_px4_gz_x500.sh \
-    && echo '    make px4_sitl gz_x500' >> /usr/local/bin/launch_px4_gz_x500.sh \
+    && echo '    make px4_sitl gz_x500_depth' >> /usr/local/bin/launch_px4_gz_x500.sh \
     && echo 'fi' >> /usr/local/bin/launch_px4_gz_x500.sh \
     && chmod +x /usr/local/bin/launch_px4_gz_x500.sh
 
@@ -129,14 +129,15 @@ RUN echo '#!/bin/bash' > /usr/local/bin/start_integrated_system.sh \
     && echo 'source /opt/ros/humble/setup.bash' >> /usr/local/bin/start_integrated_system.sh \
     && echo 'export GZ_SIM_RESOURCE_PATH=/opt/px4_source/Tools/simulation/gz/models:/opt/px4_source/Tools/simulation/gz/worlds' >> /usr/local/bin/start_integrated_system.sh \
     && echo 'export PX4_GZ_MODELS=/opt/px4_source/Tools/simulation/gz/models' >> /usr/local/bin/start_integrated_system.sh \
+    && echo 'export PX4_GZ_WORLD=/opt/px4_source/Tools/simulation/gz/worlds/baylands.sdf' >> /usr/local/bin/start_integrated_system.sh \
     && echo 'cd /opt/px4_source' >> /usr/local/bin/start_integrated_system.sh \
     && echo 'echo "Building and starting PX4 SITL with Gazebo x500..."' >> /usr/local/bin/start_integrated_system.sh \
-    && echo 'if ! make px4_sitl gz_x500 &' >> /usr/local/bin/start_integrated_system.sh \
+    && echo 'if ! make px4_sitl gz_x500_depth &' >> /usr/local/bin/start_integrated_system.sh \
     && echo 'then' >> /usr/local/bin/start_integrated_system.sh \
     && echo '    echo "Initial build failed, cleaning and retrying..."' >> /usr/local/bin/start_integrated_system.sh \
     && echo '    make clean && make submodulesclean' >> /usr/local/bin/start_integrated_system.sh \
     && echo '    git submodule update --init --recursive' >> /usr/local/bin/start_integrated_system.sh \
-    && echo '    make px4_sitl gz_x500 &' >> /usr/local/bin/start_integrated_system.sh \
+    && echo '    make px4_sitl gz_x500_depth &' >> /usr/local/bin/start_integrated_system.sh \
     && echo 'fi' >> /usr/local/bin/start_integrated_system.sh \
     && echo 'PX4_PID=$!' >> /usr/local/bin/start_integrated_system.sh \
     && echo 'sleep 15' >> /usr/local/bin/start_integrated_system.sh \
@@ -153,23 +154,6 @@ RUN echo '#!/bin/bash' > /usr/local/bin/launch_gz_only.sh \
     && echo 'export GZ_SIM_RESOURCE_PATH=/opt/px4_source/Tools/simulation/gz/models:/opt/px4_source/Tools/simulation/gz/worlds' >> /usr/local/bin/launch_gz_only.sh \
     && echo 'gz sim -v 4 -r /opt/px4_source/Tools/simulation/gz/worlds/default.sdf' >> /usr/local/bin/launch_gz_only.sh \
     && chmod +x /usr/local/bin/launch_gz_only.sh
-
-# Create integrated launch script (PX4 SITL + Gazebo + MAVROS)
-RUN echo '#!/bin/bash' > /usr/local/bin/start_integrated_system.sh \
-    && echo 'source /opt/ros/humble/setup.bash' >> /usr/local/bin/start_integrated_system.sh \
-    && echo 'export GZ_SIM_RESOURCE_PATH=/opt/px4_source/Tools/simulation/gz/models:/opt/px4_source/Tools/simulation/gz/worlds' >> /usr/local/bin/start_integrated_system.sh \
-    && echo 'export PX4_GZ_MODELS=/opt/px4_source/Tools/simulation/gz/models' >> /usr/local/bin/start_integrated_system.sh \
-    && echo 'cd /opt/px4_source' >> /usr/local/bin/start_integrated_system.sh \
-    && echo 'echo "Building and starting PX4 SITL with Gazebo x500 (this may take a few minutes on first run)..."' >> /usr/local/bin/start_integrated_system.sh \
-    && echo 'make px4_sitl gz_x500 &' >> /usr/local/bin/start_integrated_system.sh \
-    && echo 'PX4_PID=$!' >> /usr/local/bin/start_integrated_system.sh \
-    && echo 'sleep 10' >> /usr/local/bin/start_integrated_system.sh \
-    && echo 'echo "Starting MAVROS..."' >> /usr/local/bin/start_integrated_system.sh \
-    && echo 'ros2 launch mavros px4.launch fcu_url:="udp://:14540@127.0.0.1:14557" &' >> /usr/local/bin/start_integrated_system.sh \
-    && echo 'MAVROS_PID=$!' >> /usr/local/bin/start_integrated_system.sh \
-    && echo 'echo "System started. PX4 PID: $PX4_PID, MAVROS PID: $MAVROS_PID"' >> /usr/local/bin/start_integrated_system.sh \
-    && echo 'wait $PX4_PID $MAVROS_PID' >> /usr/local/bin/start_integrated_system.sh \
-    && chmod +x /usr/local/bin/start_integrated_system.sh
 
 # Create workspace directory
 WORKDIR /root/drone_control_ws
