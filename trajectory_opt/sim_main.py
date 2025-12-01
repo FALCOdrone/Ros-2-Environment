@@ -21,13 +21,13 @@ n = A.shape[0]
 m = B.shape[1]
 
 # Weights (terminal-goal)
-q_pos_stage = 0.5
-q_vel_stage = 0.05
+q_pos_stage = 0.1       # before: 0.5
+q_vel_stage = 0.05      # before: 0.05
 Q_stage = np.diag([q_pos_stage, q_pos_stage, q_pos_stage,
                    q_vel_stage, q_vel_stage, q_vel_stage,
                    0.0, 0.0])[:n,:n]   
-Qf = np.diag([300.0, 300.0, 300.0, 20.0, 20.0, 20.0, 0.0, 0.0])[:n,:n]
-R = 0.05 * np.eye(m)
+Qf = np.diag([1000.0, 1000.0, 1000.0, 50.0, 50.0, 50.0, 0.0, 0.0])[:n,:n]
+R = 0.5 * np.eye(m)
 
 a_max = 4.0 # max acceleration in m/s^2
 lb = np.kron(np.ones(N), -a_max * np.ones(m)) # lower bound on u (3N,)
@@ -55,7 +55,7 @@ Sx0, Su = model.build_prediction_matrices(A, B, N)  # assume model provides this
 H_init, g_init, Qbar = model.build_qp_in_u_terminal_goal(Q_stage, R, Qf, Sx0, Su, x0, x_goal)
 
 # Ensure H is symmetric and numerically PSD: take half (H+H.T)/2 and small regularizer
-P_init = (H_init + H_init.T) * 0.5
+P_init = (H_init + H_init.T) * 0.5 # make sure symmetric for OSQP
 eps = 1e-8
 P_init += eps * np.eye(P_init.shape[0])
 
@@ -127,6 +127,52 @@ for t in range(sim_steps):
 
     # warm start: shift previous solution and append last
     u_prev = np.vstack((u_seq[1:], u_seq[-1:])).reshape(-1)
+
+
+# -------------------------- Plot optimal input sequences, actual trajectory and planned paths ------------------
+time_u = np.arange(N) * dt
+u_final = planned_us[-1]  # last planned inputs
+fig_u, axs_u = plt.subplots(m, 1, figsize=(8, 6))
+
+print("\nClose the figures for running the animation\n")
+
+# enlarge figure for better visibility
+fig_u.set_size_inches(10, 6)
+
+# compute y-limits based on data and a_max
+u_abs_max = np.max(np.abs(u_final))
+y_margin = 0.25 * u_abs_max
+ymin, ymax = -u_abs_max - y_margin, u_abs_max + y_margin
+
+for i in range(m):
+    axs_u[i].plot(time_u, u_final[:, i], label=f'Input u[{i}]', linewidth=2)
+    axs_u[i].axhline(a_max, color='r', linestyle='--', label='Max limit' if i==0 else "")
+    axs_u[i].axhline(-a_max, color='r', linestyle='--')
+    axs_u[i].set_ylabel(f'u[{i}] [m/s²]')
+    axs_u[i].set_xlim(time_u[0], time_u[-1])
+    axs_u[i].set_ylim(ymin, ymax)
+    axs_u[i].grid()
+    if i == 0:
+        axs_u[i].legend()
+axs_u[-1].set_xlabel('Time [s]')
+plt.suptitle('Final planned optimal input sequence')
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.show()
+
+# Plot actual trajectory
+time_x = np.arange(sim_steps+1) * dt
+fig_x, axs_x = plt.subplots(3, 1, figsize=(8, 8))
+state_labels = ['X [m]', 'Y [m]', 'Z [m]']
+for i in range(3):
+    axs_x[i].plot(time_x, x_actual[:, i], label=f'State x[{i}]')
+    axs_x[i].axhline(x_goal[i], color='g', linestyle='--', label='Goal' if i==0 else "")
+    axs_x[i].set_ylabel(state_labels[i])
+    axs_x[i].grid()
+    if i == 0:
+        axs_x[i].legend()
+axs_x[-1].set_xlabel('Time [s]')
+plt.suptitle('Actual trajectory over time')
+plt.show()
 
 # ------------------ Build animation data (same plotting as before) ------------------
 frames = sim_steps
