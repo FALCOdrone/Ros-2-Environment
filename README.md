@@ -84,7 +84,7 @@ colcon build
 source install/setup.bash
 
 # Launch the drone simulation with Gazebo
-ros2 launch falco_drone_bringup falco_drone_bringup
+ros2 launch falco_drone_bringup falco_drone_bringup.launch.py
 ```
 
 ### 2. Run Position Control
